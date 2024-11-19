@@ -89,8 +89,9 @@
                             {% endfor %}
                         {% endif %}
                         
-                        <form method="POST">
+                        <form method="post" action="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}">
                             {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ next }}">
                             <div class="mb-4">
                                 <label for="username" class="form-label">請輸入帳號</label>
                                 <input type="text" class="form-control" id="username" name="username" 
