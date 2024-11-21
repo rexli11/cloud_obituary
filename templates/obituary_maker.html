@@ -209,7 +209,7 @@
                     <label for="deceased_photo" class="form-label">個人照片</label>
                     <input type="file" class="form-control" id="deceased_photo" name="deceased_photo" accept="image/*" onchange="previewImage(this);">
                     <div class="form-text text-muted">
-                        ��上傳直式相片，建議尺寸比例為 3:4
+                        上傳直式相片，建議尺寸比例為 3:4
                         <br>
                         支援的格式：JPG、PNG
                     </div>
@@ -820,9 +820,34 @@
         }
 
         function previewObituary() {
-            // 在這裡添加預覽功能的實現
-            // 可以打開一個新視窗或模態框來顯示預覽內容
-            window.open('/preview_obituary', '_blank');
+            // 創建一個表單來提交數據
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/preview_obituary/';
+            form.target = '_blank';
+            
+            // 添加 CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            // 獲取所有需要預覽的數據
+            const formData = new FormData(document.querySelector('form'));
+            for (let [name, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            }
+            
+            // 提交表單
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
         }
     </script>
 </body>

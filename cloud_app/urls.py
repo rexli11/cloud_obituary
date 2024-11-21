@@ -8,4 +8,5 @@ urlpatterns = [
     path('obituary/', views.obituary_base, name='obituary_base'),
     path('obituary/create/', views.create_obituary, name='create_obituary'),
     path('obituary/search/', views.search_obituary, name='search_obituary'),
+    path('preview_obituary/', views.preview_obituary, name='preview_obituary'),
 ] 

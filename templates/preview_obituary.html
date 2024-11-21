@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訃聞預覽</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-color: #1668dc;
+        }
+        
+        .golden-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: #D4AF37;  /* 金色 */
+            z-index: 2;
+        }
+        
+        .preview-container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            padding-top: 40px; /* 為金色色條預留空間 */
+        }
+        
+        .background-image {
+            position: absolute;
+            top: 40px; /* 從金色色條下方開始 */
+            left: 0;
+            width: 100%;
+            height: calc(100% - 40px); /* 減去金色色條的高度 */
+            object-fit: cover;
+            z-index: 0;
+        }
+        
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: calc(100vh - 40px); /* 減去金色色條的高度 */
+        }
+        
+        .preview-content {
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+        }
+        
+        .deceased-name {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #000;
+        }
+        
+        .photo-container {
+            width: 33.33vw; /* 螢幕寬度的1/3 */
+            margin: 0 auto 30px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            aspect-ratio: 3/4; /* 保持3:4的比例 */
+        }
+        
+        .photo-label {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .deceased-photo {
+            width: 100%;
+            height: calc(100% - 30px); /* 減去label的高度 */
+            object-fit: contain;
+        }
+
+        @media (max-width: 768px) {
+            .background-image {
+                content: url('{% static "cloud_obituary/mobile/" %}{{ data.mobile_background }}.jpg');
+            }
+            
+            .photo-container {
+                width: 80vw; /* 手機版照片容器寬度 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="golden-bar"></div>
+    <div class="preview-container">
+        <img class="background-image" src="{% static 'cloud_obituary/desktop/' %}{{ data.desktop_background }}.jpg" alt="背景">
+        <div class="content-wrapper">
+            <div class="preview-content">
+                <div class="deceased-name">{{ data.deceased_name }}</div>
+                <div class="photo-container">
+                    <div class="photo-label">個人照片</div>
+                    {% if data.deceased_photo %}
+                        <img class="deceased-photo" src="{{ data.deceased_photo.url }}" alt="往生者照片">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
