@@ -1,9 +1,29 @@
 首頁 - 完成，未美化
 登入頁 - 完成，未美化
 
-
+路徑 : 
+base(base.html) 
+	雲端案件管理(暫時未製作)
+	雲端訃聞製作
+		Login
+			雲端訃聞製作首頁(obituary_base.html)
+	數據分析儀表板
+		連結至社群數據分析儀表板
 
 公司super user
 account : rexli
 email : rexli01010629@gmail.com
 password : sk801010629
+
+雲端訃聞製作首頁 - (obituary_base.html)
+	- 列出所有雲端訃聞 : 訃聞搜尋結果頁面(obituary_search.html)
+	- 製作新的雲端訃聞 : 訃聞製作頁面(obituary_maker.html)
+	
+
+訃聞製作功能列表
+	輸入往生者全名
+	生 - 辭
+	告別式說明區
+	儀式流程
+	
+	

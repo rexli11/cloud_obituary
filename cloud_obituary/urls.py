@@ -1,13 +1,7 @@
 from django.contrib import admin
-from django.urls import path
-from cloud_app import views
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.home_view, name='home'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('obituary/', views.obituary_base, name='obituary_base'),
-    path('obituary/create/', views.create_obituary, name='create_obituary'),
-    path('obituary/search/', views.search_obituary, name='search_obituary'),
+    path('', include('cloud_app.urls')),
 ]

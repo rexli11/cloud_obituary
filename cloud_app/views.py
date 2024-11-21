@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse
 
 def home_view(request):
     return render(request, 'base.html')
@@ -31,13 +30,14 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def obituary_base(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
     return render(request, 'obituary_base.html')
 
 @login_required(login_url='login')
 def create_obituary(request):
-    return render(request, 'create_obituary.html')
+    if request.method == 'POST':
+        # 處理表單提交的邏輯
+        pass
+    return render(request, 'obituary_maker.html')
 
 @login_required(login_url='login')
 def search_obituary(request):
