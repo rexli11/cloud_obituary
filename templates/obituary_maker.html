@@ -56,11 +56,10 @@
 
         .preview-box img {
             width: 100% !important;
-            height: 1000px !important;
+            height: 500px !important;
             object-fit: cover;
+            object-position: top;
             border-radius: 5px;
-            max-width: none !important;
-            margin: 0 !important;
         }
 
         .desktop-preview img,
@@ -140,7 +139,7 @@
         </div>
 
         <div class="form-container">
-            <form method="POST">
+            <form method="POST" action="{% url 'preview_obituary' %}" enctype="multipart/form-data" id="obituaryForm">
                 {% csrf_token %}
                 
                 <h4 class="mb-4">版面設定</h4>
@@ -289,39 +288,56 @@
                     <label class="form-label">位置資訊</label>
                     <div class="mb-3">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-primary" id="farewell_hall">告別式會場</button>
-                            <button type="button" class="btn btn-outline-primary" id="tomb">靈堂</button>
+                            <button type="button" class="btn btn-primary" id="farewell_hall" onclick="switchLocationForm('farewell')">告別式會場</button>
+                            <button type="button" class="btn btn-outline-primary" id="tomb" onclick="switchLocationForm('tomb')">靈堂</button>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="location_name" class="form-label">會場名稱</label>
-                        <input type="text" class="form-control" id="location_name" name="location_name" required placeholder="請輸入告別式會場名稱">
-                    </div>
+                    <!-- 告別式會場表單 -->
+                    <div id="farewell_form">
+                        <div class="mb-3">
+                            <label for="farewell_location_name" class="form-label">會場名稱</label>
+                            <input type="text" class="form-control" id="farewell_location_name" name="farewell_location_name" placeholder="請輸入告別式會場名稱">
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="location_address" class="form-label">會場地址</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="location_address" name="location_address" required placeholder="請輸入會場地址">
-                            <button class="btn btn-primary" type="button" onclick="searchLocation()">搜尋</button>
+                        <div class="mb-3">
+                            <label for="farewell_location_address" class="form-label">會場地址</label>
+                            <input type="text" class="form-control" id="farewell_location_address" name="farewell_location_address" placeholder="請輸入會場地址">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="farewell_location_area" class="form-label">所屬廳別</label>
+                            <input type="text" class="form-control" id="farewell_location_area" name="farewell_location_area" placeholder="請輸入所屬廳別">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="farewell_traffic_info" class="form-label">交通資訊</label>
+                            <textarea class="form-control" id="farewell_traffic_info" name="farewell_traffic_info" rows="4" placeholder="請輸入細部交通資訊"></textarea>
                         </div>
                     </div>
 
-                    <div class="mb-3" id="location_area_container">
-                        <label for="location_area" class="form-label">所屬廳別</label>
-                        <input type="text" class="form-control" id="location_area" name="location_area" placeholder="請輸入所屬廳別">
-                    </div>
+                    <!-- 靈堂表單 -->
+                    <div id="tomb_form" style="display: none;">
+                        <div class="mb-3">
+                            <label for="tomb_location_name" class="form-label">靈堂名稱</label>
+                            <input type="text" class="form-control" id="tomb_location_name" name="tomb_location_name" placeholder="請輸入靈堂名稱">
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="traffic_info" class="form-label">交通資訊</label>
-                        <textarea class="form-control" id="traffic_info" name="traffic_info" rows="4" placeholder="請輸入細部交通資訊"></textarea>
-                    </div>
+                        <div class="mb-3">
+                            <label for="tomb_location_address" class="form-label">靈堂地址</label>
+                            <input type="text" class="form-control" id="tomb_location_address" name="tomb_location_address" placeholder="請輸入靈堂地址">
+                        </div>
 
-                    <!-- 這裡預留給地圖顯示區域 -->
-                    <div id="map" class="mt-3" style="height: 300px; border-radius: 5px;"></div>
-                    <!-- 隱藏的經緯度輸入 -->
-                    <input type="hidden" id="latitude" name="latitude">
-                    <input type="hidden" id="longitude" name="longitude">
+                        <div class="mb-3">
+                            <label for="tomb_location_area" class="form-label">所屬廳別</label>
+                            <input type="text" class="form-control" id="tomb_location_area" name="tomb_location_area" placeholder="請輸入所屬廳別">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tomb_traffic_info" class="form-label">交通資訊</label>
+                            <textarea class="form-control" id="tomb_traffic_info" name="tomb_traffic_info" rows="4" placeholder="請輸入細部交通資訊"></textarea>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -444,7 +460,7 @@
             '(': '（',
             ')': '）',
             '[': '［',
-            ']': '］',
+            ']': ']',
             '{': '｛',
             '}': '｝',
             '<': '＜',
@@ -522,7 +538,7 @@
             const input = document.getElementById('location_address');
             const autocomplete = new google.maps.places.Autocomplete(input);
             
-            // 當選擇地址時更新地圖
+            // 當選擇址時更新地圖
             autocomplete.addListener('place_changed', function() {
                 const place = autocomplete.getPlace();
                 if (!place.geometry) {
@@ -557,7 +573,7 @@
                 if (status === 'OK') {
                     updateMap(results[0].geometry.location, results[0].formatted_address);
                 } else {
-                    alert('找不到該地址，請重新輸入');
+                    alert('找不到該地址，重新輸入');
                 }
             });
         }
@@ -762,7 +778,7 @@
             }
         }
 
-        // 置資訊按鈕切換
+        // 置資訊���鈕切換
         document.getElementById('send_farewell').addEventListener('click', function() {
             this.classList.add('btn-primary');
             this.classList.remove('btn-outline-primary');
@@ -820,34 +836,68 @@
         }
 
         function previewObituary() {
-            // 創建一個表單來提交數據
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/preview_obituary/';
-            form.target = '_blank';
+            const form = document.getElementById('obituaryForm');
+            const formData = new FormData(form);
+            
+            const submitForm = document.createElement('form');
+            submitForm.method = 'POST';
+            submitForm.action = '/preview_obituary/';
+            submitForm.enctype = 'multipart/form-data';
+            submitForm.target = '_blank';
             
             // 添加 CSRF token
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = csrfToken;
-            form.appendChild(csrfInput);
+            csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            submitForm.appendChild(csrfInput);
             
-            // 獲取所有需要預覽的數據
-            const formData = new FormData(document.querySelector('form'));
-            for (let [name, value] of formData.entries()) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = name;
-                input.value = value;
-                form.appendChild(input);
+            // 將 FormData 中的數據轉換為表單元素
+            for (let [key, value] of formData.entries()) {
+                if ((key === 'deceased_photo' || key === 'obituary_front_image' || key === 'obituary_back_image') && value instanceof File) {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.name = key;
+                    input.style.display = 'none';
+                    
+                    // 創建一個新的 FileList 對象
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(value);
+                    input.files = dataTransfer.files;
+                    
+                    submitForm.appendChild(input);
+                } else {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    submitForm.appendChild(input);
+                }
             }
             
-            // 提交表單
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+            document.body.appendChild(submitForm);
+            submitForm.submit();
+            document.body.removeChild(submitForm);
+        }
+
+        // 添加切換表單的 JavaScript
+        function switchLocationForm(type) {
+            // 切換按鈕樣式
+            if (type === 'farewell') {
+                document.getElementById('farewell_hall').classList.add('btn-primary');
+                document.getElementById('farewell_hall').classList.remove('btn-outline-primary');
+                document.getElementById('tomb').classList.remove('btn-primary');
+                document.getElementById('tomb').classList.add('btn-outline-primary');
+            } else {
+                document.getElementById('tomb').classList.add('btn-primary');
+                document.getElementById('tomb').classList.remove('btn-outline-primary');
+                document.getElementById('farewell_hall').classList.remove('btn-primary');
+                document.getElementById('farewell_hall').classList.add('btn-outline-primary');
+            }
+
+            // 切換表單顯示
+            document.getElementById('farewell_form').style.display = type === 'farewell' ? 'block' : 'none';
+            document.getElementById('tomb_form').style.display = type === 'tomb' ? 'block' : 'none';
         }
     </script>
 </body>

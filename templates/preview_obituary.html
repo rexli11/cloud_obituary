@@ -7,14 +7,25 @@
     <title>訃聞預覽</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: '標楷體';
+            src: url('{% static "cloud_obituary/fonts/kaiti.ttf" %}') format('truetype');
+        }
+        
+        @font-face {
+            font-family: '華康仿宋體';
+            src: url('{% static "cloud_obituary/fonts/fangsong.ttf" %}') format('truetype');
+        }
+
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background-color: #1668dc;
+            {% comment %} background-color: #1668dc; {% endcomment %}
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體', 'KaiTi', '楷體-繁'{% else %}'華康仿宋體', 'FangSong', '仿宋-繁'{% endif %}, sans-serif;
         }
         
-        .golden-bar {
+        {% comment %} .golden-bar {
             position: fixed;
             top: 0;
             left: 0;
@@ -22,21 +33,23 @@
             height: 40px;
             background-color: #D4AF37;  /* 金色 */
             z-index: 2;
-        }
+        } {% endcomment %}
         
         .preview-container {
             width: 100%;
             min-height: 100vh;
             position: relative;
-            padding-top: 40px; /* 為金色色條預留空間 */
+            overflow-x: hidden;
         }
         
         .background-image {
-            position: absolute;
-            top: 40px; /* 從金色色條下方開始 */
-            left: 0;
-            width: 100%;
-            height: calc(100% - 40px); /* 減去金色色條的高度 */
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, 0);  /* 水平置中 */
+            height: 100vh;
+            width: auto;  /* 自動寬度 */
+            min-width: 100vw;  /* 最小寬度為視窗寬度 */
             object-fit: cover;
             z-index: 0;
         }
@@ -45,16 +58,16 @@
             position: relative;
             z-index: 1;
             padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: calc(100vh - 40px); /* 減去金色色條的高度 */
+            margin: 0 auto;
+            max-width: 1200px;
+            background-color: transparent;
         }
         
         .preview-content {
             width: 100%;
             max-width: 1000px;
             text-align: center;
+            margin: 0 auto;
         }
         
         .deceased-name {
@@ -62,19 +75,16 @@
             font-weight: bold;
             margin-bottom: 30px;
             color: #000;
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
         }
         
         .photo-container {
-            width: 33.33vw; /* 螢幕寬度的1/3 */
+            width: 33.33vw;
+            height: 44.44vw;
             margin: 0 auto 30px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            aspect-ratio: 3/4; /* 保持3:4的比例 */
+            background-color: transparent;
+            position: relative;
+            overflow: hidden;
         }
         
         .photo-label {
@@ -83,39 +93,949 @@
         }
         
         .deceased-photo {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: calc(100% - 30px); /* 減去label的高度 */
-            object-fit: contain;
+            height: 100%;
+            object-fit: cover;
         }
 
         @media (max-width: 768px) {
-            .background-image {
-                content: url('{% static "cloud_obituary/mobile/" %}{{ data.mobile_background }}.jpg');
+            .photo-container {
+                width: 80vw;
+                height: 106.67vw;
             }
             
-            .photo-container {
-                width: 80vw; /* 手機版照片容器寬度 */
+            .content-wrapper {
+                padding: 20px 10px;
             }
+        }
+        
+        .dates-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 50px; /* 生卒年之間的間距 */
+        }
+        
+        .date-item {
+            font-size: 24px;
+            color: #000;
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+        }
+        
+        .ceremony-container {
+            width: 80%;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: transparent;
+            color: #000;
+            font-size: 20px;
+            text-align: left;
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+        }
+        
+        .ceremony-process-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        
+        .ceremony-process-content {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .ceremony-title {
+            color: #000;
+            padding: 10px 20px;
+            font-size: 20px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        
+        .ceremony-divider {
+            height: 2px;
+            background-color: #4a76cf;
+            margin: 10px 0 20px 0;
+            width: 100%;
+        }
+        
+        .ceremony-content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .ceremony-left-section,
+        .ceremony-right-section {
+            width: 40%;
+        }
+        
+        @media (max-width: 768px) {
+            .ceremony-content-wrapper {
+                flex-direction: column;
+            }
+
+            .ceremony-left-section,
+            .ceremony-right-section {
+                width: 100%;
+            }
+        }
+        
+        .obituary-preview {
+            width: 364px;
+            height: 245px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        
+        .obituary-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .obituary-thumbnails {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .obituary-thumbnail {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+        
+        .obituary-thumbnail.active {
+            border-color: #4a76cf;
+        }
+        
+        .obituary-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* 全螢幕預覽樣式 */
+        .fullscreen-preview {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .fullscreen-preview img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        .close-preview {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .google-map-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .ceremony-process-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #4a76cf;
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+        }
+        
+        .ceremony-left-section {
+            width: 70%;
+            padding-right: 10px;
+        }
+        
+        .ceremony-columns {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .obituary-images {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .obituary-image {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        .ceremony-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .ceremony-item .time {
+            color: #4a76cf;
+            margin-bottom: 5px;
+        }
+        
+        .ceremony-item .content {
+            color: #333;
+        }
+        
+        .obituary-preview {
+            background-color: transparent;
+            padding: 1px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .obituary-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .head {
+            margin-bottom: 20px;
+        }
+
+        .head h2 {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .calendar-link {
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+            font-size: 14px;
+            color: #666;
+            text-decoration: none;
+        }
+
+        .calendar-link img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+        .ceremony-divider {
+            height: 2px;
+            background-color: #385A52;
+            margin: 15px 0;
+        }
+
+        .ceremony-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .ceremony-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .ceremony-list li:nth-child(odd) {
+            background-color: #e9ecef;
+        }
+
+        .ceremony-list li:hover {
+            background-color: #e2e6ea;
+        }
+
+        .ceremony-list li span {
+            width: 80px;
+            color: #666666;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .ceremony-list li p {
+            margin: 0;
+            flex: 1;
+            font-size: 18px;
+            padding-left: 15px;
+        }
+
+        .ceremony-content-wrapper {
+            display: flex;
+            gap: 40px;
+        }
+
+        .ceremony-left-section {
+            width: 60%;
+        }
+
+        .ceremony-right-section {
+            width: 40%;
+        }
+
+        .obituary-thumbnails {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .obituary-thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 5px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .obituary-thumbnail.active {
+            border: 2px solid #4a76cf;
+        }
+
+        .obituary-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        @media (max-width: 768px) {
+            .ceremony-content-wrapper {
+                flex-direction: column;
+            }
+
+            .ceremony-left-section,
+            .ceremony-right-section {
+                width: 100%;
+            }
+        }
+
+        /* 修改訃聞照片預覽樣式 */
+        .obituary-preview {
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .obituary-preview:hover {
+            transform: scale(1.02);
+        }
+
+        .obituary-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 全螢幕預覽樣式優化 */
+        .fullscreen-preview {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fullscreen-preview img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .close-preview {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .close-preview:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+
+        /* 位置資訊樣式 */
+        .location-content {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .location-info {
+            width: 40%;
+        }
+
+        .map-container {
+            width: 60%;
+        }
+
+        .info-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .info-item:nth-child(odd) {
+            background-color: #e9ecef;
+        }
+
+        .info-item label {
+            display: block;
+            color: #4a76cf;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .info-item p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .map-link {
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+            font-size: 14px;
+            color: #666;
+            text-decoration: none;
+        }
+
+        .map-link img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .location-content {
+                flex-direction: column;
+            }
+
+            .location-info,
+            .map-container {
+                width: 100%;
+            }
+        }
+
+        .location-container {
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .location-tab {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+            gap: 10px;
+            font-size: 18px;
+        }
+
+        .location-tab li {
+            padding: 8px 20px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+            transition: all 0.3s;
+        }
+
+        .location-tab li.active {
+            background-color: #B87070;
+            color: white;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .info-list li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .info-list li span {
+            width: 100px;
+            color: #B87070;
+            font-weight: bold;
+        }
+
+        .info-list li p {
+            margin: 0;
+            flex: 1;
+        }
+
+        /* 交通資訊樣式 */
+        .traffic-info-container {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .traffic-header {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .toggle-icon {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .traffic-content {
+            padding: 15px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease-out;
+            max-height: 1000px;
+            overflow: hidden;
+        }
+
+        .traffic-content.collapsed {
+            max-height: 0;
+            padding: 0;
+        }
+
+        .traffic-sections {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #1A1A1A;
+        }
+
+        /* 修改地圖容器樣式 */
+        .map-preview {
+            width: 364px;
+            height: 245px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .map-preview #map {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 確保右側區域與儀式流程容器中的右側區域大小一致 */
+        .ceremony-right-section,
+        .map-section {
+            width: 40%;
+        }
+
+        @media (max-width: 768px) {
+            .map-preview {
+                width: 100%;
+                height: 245px;
+            }
+            
+            .ceremony-right-section,
+            .map-section {
+                width: 100%;
+            }
+        }
+
+        /* 添加 RWD 背景控制 */
+        @media screen and (max-width: 768px) {
+            .background-image {
+                height: 100vh;
+                width: auto;
+                min-width: 100vw;
+                object-position: center top;
+            }
+        }
+
+        @media screen and (min-width: 769px) {
+            .background-image {
+                height: 100vh;
+                width: auto;
+                min-width: 100vw;
+                object-position: center center;
+            }
+        }
+
+        /* 移除之前的背景圖片過渡效果 */
+        .background-image {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <div class="golden-bar"></div>
     <div class="preview-container">
-        <img class="background-image" src="{% static 'cloud_obituary/desktop/' %}{{ data.desktop_background }}.jpg" alt="背景">
+        {% comment %} <div class="golden-bar"></div> {% endcomment %}
+        {% if data.desktop_background %}
+            <img 
+                class="background-image" 
+                src="{% static 'cloud_obituary/desktop/' %}{{ data.desktop_background }}.jpg" 
+                alt="背景"
+                onload="this.classList.add('loaded')"
+            >
+        {% endif %}
         <div class="content-wrapper">
             <div class="preview-content">
                 <div class="deceased-name">{{ data.deceased_name }}</div>
                 <div class="photo-container">
-                    <div class="photo-label">個人照片</div>
                     {% if data.deceased_photo %}
-                        <img class="deceased-photo" src="{{ data.deceased_photo.url }}" alt="往生者照片">
+                        <img 
+                            class="deceased-photo" 
+                            src="{{ data.deceased_photo }}" 
+                            alt="個人照片" 
+                            onerror="console.error('照片加載失敗'); this.style.display='none';"
+                            onload="console.log('照片加載成功');"
+                        >
+                    {% else %}
+                        <!-- 可選：顯示預設圖片或提示 -->
+                        <div style="color: #666;">未上傳照片</div>
                     {% endif %}
+                </div>
+
+                <!-- 生卒年容器 -->
+                <div class="dates-container" style="margin-top: {% if not data.birth_date and not data.death_date %}0{% else %}20px{% endif %};">
+                    {% if not data.hide_birth_date and data.birth_date %}
+                        <div class="date-item">
+                            生於 {{ data.birth_date }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if not data.hide_death_date and data.death_date %}
+                        <div class="date-item">
+                            卒於 {{ data.death_date }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 告別式說明容器 -->
+                {% if data.ceremony_details %}
+                    <div class="ceremony-container">
+                        {{ data.ceremony_details|linebreaks }}
+                    </div>
+                {% endif %}
+
+                <!-- 儀式流程容器 -->
+                {% if data.ceremony_times or data.obituary_front_image or data.obituary_back_image %}
+                    <div class="ceremony-process-container">
+                        <div class="ceremony-process-content">
+                            <div class="head">
+                                <h2 class="uk-flex uk-flex-middle">
+                                    儀式流程
+                                    <a class="calendar-link" href="#" target="_blank">
+                                        <img src="{% static 'images/google-calendar.png' %}" alt="">
+                                        <span>加入行事曆</span>
+                                    </a>
+                                </h2>
+                                <div class="ceremony-divider"></div>
+                            </div>
+                            
+                            <div class="ceremony-content-wrapper">
+                                <!-- 左：儀式流程 -->
+                                <div class="ceremony-left-section">
+                                    <ul class="ceremony-list">
+                                        {% for time, content in data.ceremony_times %}
+                                            <li><span>{{ time }}</span><p>{{ content }}</p></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                
+                                <!-- 右側：訃聞照片 -->
+                                <div class="ceremony-right-section">
+                                    <div class="obituary-preview" onclick="showFullscreen(this.querySelector('img').src)">
+                                        {% if data.obituary_front_image %}
+                                            <img src="{{ data.obituary_front_image }}" alt="訃聞預覽">
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="obituary-thumbnails">
+                                        {% if data.obituary_front_image %}
+                                            <div class="obituary-thumbnail active" onclick="switchPreview(this, '{{ data.obituary_front_image }}')">
+                                                <img src="{{ data.obituary_front_image }}" alt="訃聞正面">
+                                            </div>
+                                        {% endif %}
+                                        {% if data.obituary_back_image %}
+                                            <div class="obituary-thumbnail" onclick="switchPreview(this, '{{ data.obituary_back_image }}')">
+                                                <img src="{{ data.obituary_back_image }}" alt="訃聞反面">
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 全螢幕預覽容器 -->
+                    <div class="fullscreen-preview" onclick="hideFullscreen()">
+                        <span class="close-preview">&times;</span>
+                        <img src="" alt="全螢幕預覽">
+                    </div>
+                {% endif %}
+
+                <!-- 位置資訊容器 -->
+                <div class="ceremony-process-container location-container">
+                    <div class="ceremony-process-content">
+                        <div class="head">
+                            <h2>位置資訊</h2>
+                            <ul class="location-tab">
+                                <li class="active" data-target="farewell">告別式會場</li>
+                                <li data-target="tomb">靈堂</li>
+                            </ul>
+                            <div class="ceremony-divider"></div>
+                        </div>
+                        
+                        <div class="location-content">
+                            <div class="info">
+                                <!-- 告別式會場資訊 -->
+                                <div class="loca-info" id="farewell-info">
+                                    <ul class="info-list">
+                                        <li>
+                                            <span>會場名稱：</span>
+                                            <p>{{ data.location_name }}</p>
+                                        </li>
+                                        <li>
+                                            <span>會場地址：</span>
+                                            <p>{{ data.location_address }}</p>
+                                        </li>
+                                        {% if data.location_area %}
+                                        <li>
+                                            <span>廳別資訊：</span>
+                                            <p>{{ data.location_area }}</p>
+                                        </li>
+                                        <li>
+                                            <span>交通資訊：</span>
+                                        </li>
+                                        {% endif %}
+                                        {% if data.traffic_info %}
+                                        <li>
+                                            <div class="traffic-info-container">
+                                                <div class="traffic-header" onclick="toggleTraffic(this)">
+                                                    <div class="toggle-icon">詳細資訊</div>
+                                                </div>
+                                                <div class="traffic-content collapsed">
+                                                    <div class="traffic-sections">
+                                                        {{ data.traffic_info|linebreaks }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                
+                                <!-- 添加靈堂資訊 -->
+                                <div class="loca-info" id="tomb-info" style="display: none;">
+                                    {% comment %} <p class="venue-name">{{ data.tomb_location_name }}</p> {% endcomment %}
+                                    {% comment %} <div class="ceremony-divider"></div> {% endcomment %}
+                                    <ul class="info-list">
+                                        <li>
+                                            <span>靈堂名稱：</span>
+                                            <p>{{ data.tomb_location_name }}</p>
+                                        </li>
+                                        <li>
+                                            <span>靈堂地址：</span>
+                                            <p>{{ data.tomb_location_address }}</p>
+                                        </li>
+                                        {% if data.tomb_location_area %}
+                                        <li>
+                                            <span>靈堂廳別：</span>
+                                            <p>{{ data.tomb_location_area }}</p>
+                                        </li>
+                                        <li>
+                                            <span>交通資訊：</span>
+                                        </li>
+                                        {% endif %}
+                                        {% if data.tomb_traffic_info %}
+                                        <li>
+                                            {% comment %} <span>交通資訊：</span> {% endcomment %}
+                                            <div class="traffic-info-container">
+                                                <div class="traffic-header" onclick="toggleTraffic(this)">
+                                                    <div class="toggle-icon">詳細資訊</div>
+                                                </div>
+                                                <div class="traffic-content collapsed">
+                                                    <div class="traffic-sections">
+                                                        {{ data.tomb_traffic_info|linebreaks }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="map-section">
+                                <div class="map-preview">
+                                    <div id="map" style="width: 364px; height: 245px; border-radius: 8px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function switchPreview(thumbnail, imageSrc) {
+        // 更新縮圖的活動狀態
+        document.querySelectorAll('.obituary-thumbnail').forEach(thumb => {
+            thumb.classList.remove('active');
+        });
+        thumbnail.classList.add('active');
+        
+        // 更新預圖
+        const previewImg = document.querySelector('.obituary-preview img');
+        previewImg.src = imageSrc;
+    }
+
+    function showFullscreen(imageSrc) {
+        const fullscreen = document.querySelector('.fullscreen-preview');
+        const fullscreenImg = fullscreen.querySelector('img');
+        fullscreenImg.src = imageSrc;
+        fullscreen.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // 添加縮放動畫
+        fullscreenImg.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            fullscreenImg.style.transform = 'scale(1)';
+        }, 50);
+    }
+
+    function hideFullscreen() {
+        const fullscreen = document.querySelector('.fullscreen-preview');
+        const fullscreenImg = fullscreen.querySelector('img');
+        
+        // 添加縮小動畫
+        fullscreenImg.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            fullscreen.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            fullscreenImg.style.transform = 'scale(1)';
+        }, 200);
+    }
+
+    // 防止點擊圖片時觸發父元素的點擊事件
+    document.querySelector('.fullscreen-preview img').addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // 添加鍵盤事件監聽
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            hideFullscreen();
+        }
+    });
+
+    document.querySelectorAll('.location-tab li').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // 更新標籤狀態
+            document.querySelectorAll('.location-tab li').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 切換顯示內容
+            const target = this.dataset.target;
+            document.querySelectorAll('.loca-info').forEach(info => {
+                info.style.display = 'none';
+            });
+            document.getElementById(`${target}-info`).style.display = 'block';
+        });
+    });
+
+    function toggleTraffic(element) {
+        const content = element.nextElementSibling;
+        const icon = element.querySelector('.toggle-icon');
+        
+        if (content.classList.contains('collapsed')) {
+            content.classList.remove('collapsed');
+            icon.textContent = '收合資訊';
+        } else {
+            content.classList.add('collapsed');
+            icon.textContent = '詳細資訊';
+        }
+    }
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 為位置資訊標籤添加點擊事件
+        document.querySelectorAll('.location-tab li').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 更新標籤狀態
+                document.querySelectorAll('.location-tab li').forEach(t => {
+                    t.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // 切換顯示內容
+                const target = this.dataset.target;
+                document.querySelectorAll('.loca-info').forEach(info => {
+                    info.style.display = 'none';
+                });
+                document.getElementById(`${target}-info`).style.display = 'block';
+            });
+        });
+    });
+    </script>
 </body>
 </html>
