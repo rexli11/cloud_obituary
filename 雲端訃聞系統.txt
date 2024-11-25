@@ -15,10 +15,41 @@ account : rexli
 email : rexli01010629@gmail.com
 password : sk801010629
 
+title icon : 60 * 40
+
 雲端訃聞製作首頁 - (obituary_base.html)
 	- 列出所有雲端訃聞 : 訃聞搜尋結果頁面(obituary_search.html)
 	- 製作新的雲端訃聞 : 訃聞製作頁面(obituary_maker.html)
+
+background : 385A52
+title_container : B9AD9A
+active : B87070
+transparent
+
+範本 : 
+	https://obituarycloud.yuanduo.co/Index/Index/66d7f7d9d7e30
+	https://obituarycloud.yuanduo.co/Index/Index/66b2cb9820bd7
 	
+youtube範本 : https://www.youtube.com/watch?time_continue=8&v=OxGjV29kL1Q&source_ve_path=MjM4NTE
+
+功能實現
+	1. 按讚功能
+	2. 最上方要有logo
+	3. 最下方版權宣言
+
+要調整的
+	obituahry_maker.html
+		1. 靈堂輸入要與告別式分開紀錄，這是兩個不同的項目，只是切換
+		2. 背景圖載入時被裁切，只要顯示上半部即可
+		3. 其他程式碼目前正常，不要更動
+
+限制 : 
+字體 : 標楷體，華康仿宋體
+標點符號 : 全形
+
+底圖 : 
+手機板尺寸 : 450*6000
+桌電版尺寸 : 1280*3500
 
 訃聞製作功能列表
 	輸入往生者全名
@@ -26,4 +57,32 @@ password : sk801010629
 	告別式說明區
 	儀式流程
 	
-	
+
+API問題
+前往 Google Cloud Console (https://console.cloud.google.com/)
+創建新專案或選擇現有專案
+啟用以下 API：
+Maps JavaScript API
+Places API
+Geocoding API
+創建憑證（API 金鑰）：
+在左側選單中點擊「憑證」
+點擊「建立憑證」→「API 金鑰」
+複製生成的 API 金鑰
+設置金鑰限制（建議）：
+限制 HTTP 來源（您的網站網址）
+限制 API 使用範圍
+在 settings.py 中設置金鑰：
+在 obituary_maker.html 中更新 API 金鑰：
+需要我幫您完成具體的設置步驟嗎？或是您需要更詳細的說明？
+
+
+# 處理其他照片和數據
+        if 'deceased_photo' in request.FILES:
+            try:
+                photo = request.FILES['deceased_photo']
+                import base64
+                photo_data = base64.b64encode(photo.read()).decode()
+                preview_data['deceased_photo'] = f'data:image/jpeg;base64,{photo_data}'
+            except Exception as e:
+                print(f"個人照片處理錯誤：{str(e)}")

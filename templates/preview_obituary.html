@@ -121,6 +121,7 @@
         
         .date-item {
             font-size: 24px;
+            font-weight: bold;
             color: #000;
             font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
         }
@@ -375,16 +376,16 @@
         }
 
         .ceremony-list li:nth-child(odd) {
-            background-color: #e9ecef;
+            background-color: #B9AD9A;
         }
 
-        .ceremony-list li:hover {
+        {% comment %} .ceremony-list li:hover {
             background-color: #e2e6ea;
-        }
+        } {% endcomment %}
 
         .ceremony-list li span {
             width: 80px;
-            color: #666666;
+            color: #fff;
             font-weight: bold;
             font-size: 18px;
         }
@@ -424,7 +425,7 @@
         }
 
         .obituary-thumbnail.active {
-            border: 2px solid #4a76cf;
+            border: 2px solid #385A52;
         }
 
         .obituary-thumbnail img {
@@ -512,11 +513,11 @@
         }
 
         .location-info {
-            width: 40%;
+            width: 60%;
         }
 
         .map-container {
-            width: 60%;
+            width: 40%;
         }
 
         .info-item {
@@ -592,7 +593,7 @@
         }
 
         .location-tab li.active {
-            background-color: #B87070;
+            background-color: #385A52;
             color: white;
         }
 
@@ -624,6 +625,7 @@
         /* 交通資訊樣式 */
         .traffic-info-container {
             background-color: #f8f9fa;
+            width: 100%;
             border-radius: 5px;
             overflow: hidden;
             margin-bottom: 15px;
@@ -721,6 +723,465 @@
         .background-image {
             opacity: 1;
         }
+
+        .floating-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .float-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .float-btn i {
+            font-size: 25px;
+        }
+
+        .float-btn:hover {
+            transform: scale(1.1);
+            background-color: #fff;
+        }
+
+        .share-btn {
+            color: #4a76cf;
+        }
+
+        .music-btn {
+            color: #B87070;
+        }
+
+        .music-btn.playing {
+            background-color: #385A52;
+            color: white;
+        }
+
+        .top-btn {
+            background-color: #fff;
+            color: #4a76cf;
+            {% comment %} display: none; /* 初始隱藏 */ {% endcomment %}
+        }
+
+        .flower-gift-description {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .flower-gift-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .gift-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .gift-info {
+            padding: 15px;
+        }
+
+        .gift-info h5 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .gift-info p {
+            margin: 0;
+            color: #B87070;
+            font-size: 16px;
+        }
+
+        .memory-content-wrapper {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .memory-left-section {
+            width: 50%;
+        }
+
+        .memory-right-section {
+            width: 50%;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 比例 */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .life-photos-preview {
+            width: 100%;
+        }
+
+        .current-photo {
+            width: 100%;
+            height: 315px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .current-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .life-photos-thumbnails {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .life-photo-thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 2px solid transparent;
+        }
+
+        .life-photo-thumbnail.active {
+            border-color: #4a76cf;
+        }
+
+        .life-photo-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        @media (max-width: 768px) {
+            .memory-content-wrapper {
+                flex-direction: column;
+            }
+
+            .memory-left-section,
+            .memory-right-section {
+                width: 100%;
+            }
+        }
+
+        .no-video-message,
+        .no-photos-message {
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .video-container {
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-section {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 比例 */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            background-color: #000;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .photos-section {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .life-photos-preview {
+            width: 100%;
+        }
+
+        .current-photo {
+            width: 100%;
+            height: 450px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .current-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .life-photos-thumbnails {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            justify-content: center;
+        }
+
+        .life-photo-thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            flex-shrink: 0;
+            border: 2px solid transparent;
+        }
+
+        .life-photo-thumbnail.active {
+            border-color: #4a76cf;
+        }
+
+        .life-photo-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-photos-message {
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .current-photo {
+                height: 300px;
+            }
+        }
+
+        .flower-gift-item, .life-photo-item {
+            cursor: pointer;
+            transition: transform 0.3s;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .flower-gift-item:hover, .life-photo-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gift-image, .life-photo-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .fullscreen-preview {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fullscreen-preview img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .close-preview {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .close-preview:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+
+        .ceremony-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .ceremony-item {
+            display: flex;
+            align-items: flex-start;  /* 改為頂部對齊 */
+            gap: 15px;  /* 時間和內容之間的間距 */
+            margin-bottom: 15px;
+            background-color: transparent;
+        }
+
+        /* 時間方塊樣式 */
+        .time-block {
+            min-width: 150px;  /* 固定寬度 */
+            padding: 8px 12px;  /* 上下8px, 左右12px的內邊距 */
+            min-height: 50px;
+            background-color: #385A52;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        /* 內容方塊樣式 */
+        .content-block {
+            flex: 1;
+            margin: 0;
+            padding: 8px 15px;  /* 上下8px, 左右15px的內邊距 */
+            background-color: #385A52;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .footer-container {
+            background-color: #385A52;
+            padding: 20px 0;
+            margin-top: 40px;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .footer-info {
+            color: white;
+            font-size: 18px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .company-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .company-text {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .copyright {
+            background-color: #2A4840;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            position: relative;
+            z-index: 2;
+        }
+
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .footer-info {
+                margin-bottom: 20px;
+            }
+
+            .info-item {
+                margin-bottom: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -794,7 +1255,12 @@
                                 <div class="ceremony-left-section">
                                     <ul class="ceremony-list">
                                         {% for time, content in data.ceremony_times %}
-                                            <li><span>{{ time }}</span><p>{{ content }}</p></li>
+                                            <li class="ceremony-item">
+                                                <!-- 時間方塊 -->
+                                                <span class="time-block">{{ time }}</span>
+                                                <!-- 內容方塊 -->
+                                                <p class="content-block">{{ content }}</p>
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
@@ -901,7 +1367,7 @@
                                             <p>{{ data.tomb_location_area }}</p>
                                         </li>
                                         <li>
-                                            <span>交通資訊：</span>
+                                            <span>交通訊：</span>
                                         </li>
                                         {% endif %}
                                         {% if data.tomb_traffic_info %}
@@ -928,6 +1394,117 @@
                                     <div id="map" style="width: 364px; height: 245px; border-radius: 8px;"></div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 在位置資訊卡片後添加致贈花禮卡片 -->
+                <div class="ceremony-process-container">
+                    <div class="ceremony-process-content">
+                        <div class="head">
+                            <h2>致贈花禮</h2>
+                            <div class="ceremony-divider"></div>
+                        </div>
+
+                        <!-- 花禮說明 -->
+                        {% if data.flower_gift_description %}
+                        <div class="flower-gift-description">
+                            {{ data.flower_gift_description|linebreaks }}
+                        </div>
+                        {% endif %}
+
+                        <!-- 花禮列表 -->
+                        <div class="flower-gift-list">
+                            <!-- 添加調試信息 -->
+                            <div style="display: none;">
+                                Debug info:
+                                Total gifts: {{ data.flower_gifts|length }}
+                                {% for gift in data.flower_gifts %}
+                                    Gift {{ forloop.counter }}:
+                                    Name: {{ gift.name }}
+                                    Price: {{ gift.price }}
+                                    Has image: {% if gift.image %}Yes{% else %}No{% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="row">
+                                {% for gift in data.flower_gifts %}
+                                    <div class="col-md-3 mb-4">
+                                        <div class="flower-gift-item" onclick="showFullscreen('{{ gift.image }}')">
+                                            {% if gift.image %}
+                                            <img src="{{ gift.image }}" alt="花禮圖片" class="gift-image"
+                                                 onerror="console.error('花禮圖片載入失敗:', this.src);">
+                                            {% endif %}
+                                            <div class="gift-info">
+                                                <h5>{{ gift.name|default:'無名稱' }}</h5>
+                                                <p>{{ gift.price|default:'無價格' }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if forloop.counter|divisibleby:4 and not forloop.last %}
+                                        </div><div class="row">
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 在致花禮卡片後添加回憶錄卡片 -->
+                {% if data.memorial_video %}
+                <div class="ceremony-process-container">
+                    <div class="ceremony-process-content">
+                        <div class="head">
+                            <h2>{{ data.deceased_name }}回憶錄</h2>
+                            <div class="ceremony-divider"></div>
+                        </div>
+
+                        <div class="video-section">
+                            <div class="video-container">
+                                <iframe 
+                                    width="100%" 
+                                    height="315" 
+                                    src="{{ data.memorial_video }}" 
+                                    title="YouTube video player"
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 生活照卡片 -->
+                <div class="ceremony-process-container">
+                    <div class="ceremony-process-content">
+                        <div class="head">
+                            <h2>生活點滴</h2>
+                            <div class="ceremony-divider"></div>
+                        </div>
+
+                        <div class="photos-section">
+                            {% if data.life_photos %}
+                                <div class="life-photos-preview">
+                                    <div class="current-photo" onclick="showFullscreen(this.querySelector('img').src)">
+                                        <img src="{{ data.life_photos.0 }}" alt="生活照預覽">
+                                    </div>
+                                    
+                                    <div class="life-photos-thumbnails">
+                                        {% for photo in data.life_photos %}
+                                            <div class="life-photo-thumbnail {% if forloop.first %}active{% endif %}" 
+                                                 onclick="switchLifePhoto(this, '{{ photo }}')">
+                                                <img src="{{ photo }}" alt="生活照">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="no-photos-message">
+                                    尚未上傳生活照
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -1037,5 +1614,110 @@
         });
     });
     </script>
+    <div class="floating-buttons">
+        <!-- 分享按鈕 -->
+        <button class="float-btn share-btn" onclick="shareContent()">
+            <i class="fas fa-share-alt"></i>
+        </button>
+        
+        <!-- 音樂按鈕 -->
+        <button class="float-btn music-btn" onclick="toggleMusic()">
+            <i class="fas fa-music"></i>
+            <audio id="background_music" loop>
+                <source src="{{ data.background_music_url }}" type="audio/mpeg">
+            </audio>
+        </button>
+        
+        <!-- 回頂部按鈕 -->
+        <button class="float-btn top-btn" onclick="scrollToTop()" id="topBtn">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+    </div>
+
+    <!-- 添加 Font Awesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <script>
+    // 分享功能
+    function shareContent() {
+        if (navigator.share) {
+            navigator.share({
+                title: '訃聞資訊',
+                url: window.location.href
+            })
+            .catch(console.error);
+        }
+    }
+
+    // 音樂控制
+    let isPlaying = false;
+    function toggleMusic() {
+        const audio = document.getElementById('background_music');
+        const musicBtn = document.querySelector('.music-btn');
+        
+        if (isPlaying) {
+            audio.pause();
+            musicBtn.classList.remove('playing');
+        } else {
+            audio.play();
+            musicBtn.classList.add('playing');
+        }
+        isPlaying = !isPlaying;
+    }
+
+    // 回到頂部功能
+    window.onscroll = function() {
+        const topBtn = document.getElementById("topBtn");
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            topBtn.style.display = "flex";
+        } else {
+            topBtn.style.display = "flex";
+        }
+    };
+
+    function scrollToTop() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+    </script>
+    <script>
+    function switchLifePhoto(thumbnail, photoSrc) {
+        // 更新縮圖的活動狀態
+        document.querySelectorAll('.life-photo-thumbnail').forEach(thumb => {
+            thumb.classList.remove('active');
+        });
+        thumbnail.classList.add('active');
+        
+        // 更新預覽圖
+        const previewImg = document.querySelector('.current-photo img');
+        previewImg.src = photoSrc;
+    }
+    </script>
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="footer-info">
+                <div class="info-item">
+                    <span class="info-label">承辦人員：</span>
+                    <span class="info-value">{{ data.agent_name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">連絡電話：</span>
+                    <span class="info-value">{{ data.agent_phone }}</span>
+                </div>
+            </div>
+            <div class="company-info">
+                <img src="{% static 'images/logo.png' %}" alt="楊子雲端" class="company-logo">
+                <div class="company-text">
+                    <div>楊子</div>
+                    <div>佛教禮儀</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="copyright">
+        © {% now "Y" %} 楊子佛教禮儀雲端訃聞系統 All Rights Reserved.
+    </div>
 </body>
 </html>
