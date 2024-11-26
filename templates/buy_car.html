@@ -1,0 +1,400 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>楊子佛教禮儀-致贈花禮購物車</title>
+    {% comment %} <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon"> {% endcomment %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .cart-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            gap: 20px;
+        }
+
+        .cart-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-info h5 {
+            flex: 1;
+            font-size: 1.6em;
+        }
+
+        .item-price {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #385A52;
+        }
+
+        .remove-btn {
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .order-form {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .order-form h3 {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .form-label {
+            font-size: 1.4em;
+        }
+
+        .total-price {
+            font-size: 24px;
+            color: #385A52;
+            text-align: right;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .back-btn {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 100px;
+            background-color: #385A52;
+            border-radius: 10%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            color: white;
+            border: none;
+            transition: transform 0.3s ease;
+            padding: 10px 5px;
+        }
+
+        .back-btn i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .back-btn span {
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .notice-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 5px solid #385A52;
+        }
+
+        .notice-title {
+            color: #385A52;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .notice-content {
+            color: #666;
+            font-size: 1.4em;
+            line-height: 1.6;
+        }
+
+        .notice-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .notice-list li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .notice-list li:before {
+            content: "•";
+            color: #385A52;
+            position: absolute;
+            left: 0;
+        }
+
+        .delivery-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .delivery-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delivery-option.active {
+            border-color: #385A52;
+            background-color: #385A52;
+            color: white;
+        }
+
+        .btn-primary {
+            width: 100%;
+            font-size: 1.4em;
+            font-weight: bold;
+            background-color: #385A52;
+        }
+
+        /* 添加購物車商品列表的框格樣式 */
+        .cart-items-container {
+            border: 2px solid #385A52;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .cart-header {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #385A52;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #385A52;
+        }
+
+        /* 調整商品列表樣式 */
+        #cartItems {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* 最後一個商品項目不顯示底部邊框 */
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        /* 版權宣告樣式 */
+        .copyright {
+            background-color: #2A4840;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            padding: 10px 0;
+            font-size: 16px;
+            position: relative;
+            z-index: 2;
+            width: 100%;  /* 確保寬度 100% */
+            bottom: 0;    /* 確保在底部 */
+        }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i>
+        <span>返回訃聞</span>
+    </button>
+
+    <div class="cart-container">
+        <h2 class="mb-4">致贈花禮購物車</h2>
+        
+        <!-- 添加框格容器 -->
+        <div class="cart-items-container">
+            <div class="cart-header">
+                請確認您所選的花禮
+            </div>
+            <div id="cartItems">
+                <!-- JavaScript 將在這裡動態添加商品 -->
+            </div>
+        </div>
+
+        <div class="total-price">
+            花禮總金額：NT$<span id="totalPrice">0</span> 元
+        </div>
+
+        <div class="order-form">
+            <h3 class="mb-3">告別式 花禮訂購資訊</h3>
+            <form id="orderForm">
+                <div class="mb-3">
+                    <label class="form-label">訂購人姓名</label>
+                    <input type="text" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">聯絡電話</label>
+                    <input type="tel" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">花禮送至</label>
+                    <div class="delivery-options">
+                        <div class="delivery-option" data-value="tomb" onclick="selectDelivery(this)">送靈堂</div>
+                        <div class="delivery-option" data-value="farewell" onclick="selectDelivery(this)">送告別式</div>
+                        <div class="delivery-option" data-value="both" onclick="selectDelivery(this)">均送</div>
+                    </div>
+                    <input type="hidden" name="delivery_option" id="deliveryOption" required>
+                </div>
+                {% comment %} <div class="mb-3">
+                    <label class="form-label">送貨地址</label>
+                    <input type="text" class="form-control" required>
+                </div> {% endcomment %}
+                <div class="mb-3">
+                    <label class="form-label">備註</label>
+                    <textarea class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">確認訂購</button>
+            </form>
+
+            <div class="notice-section">
+                <div class="notice-title">
+                    <i class="fas fa-info-circle"></i> 花禮訂購須知
+                </div>
+                <div class="notice-content">
+                    <ul class="notice-list">
+                        <li>訂購後將由專人與您聯繫確認訂單細節</li>
+                        <li>花禮將於告別式當日送達指定地點</li>
+                        <li>如需更改送達時間或地點，請提前24小時通知</li>
+                        <li>特殊需求請在備註欄位說明</li>
+                        <li>花禮樣式可能因季節或供應情況略有調整</li>
+                        <li>如有任何疑問，請撥打客服專線：0800-365-108</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 返回上一頁功能
+        function goBack() {
+            window.history.back();
+        }
+
+        let selectedDelivery = '';
+        let baseTotal = 0;
+
+        function selectDelivery(element) {
+            // 移除所有選項的活動狀態
+            document.querySelectorAll('.delivery-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            
+            // 添加當前選項的活動狀態
+            element.classList.add('active');
+            
+            // 保存選擇的值
+            selectedDelivery = element.dataset.value;
+            document.getElementById('deliveryOption').value = selectedDelivery;
+            
+            // 更新總價
+            updateTotalPrice();
+        }
+
+        function updateTotalPrice() {
+            let total = baseTotal;
+            if (selectedDelivery === 'both') {
+                total *= 2;
+            }
+            document.getElementById('totalPrice').textContent = total.toLocaleString();
+        }
+
+        function loadCartItems() {
+            const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+            const container = document.getElementById('cartItems');
+            baseTotal = 0;
+            
+            container.innerHTML = '';
+            
+            cartItems.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'cart-item';
+                
+                const price = parseInt(item.price.replace(/[^\d]/g, '')) || 0;
+                baseTotal += price;
+                
+                itemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='{% static 'images/default.jpg' %}'">
+                    <div class="item-info">
+                        <h5>花禮名稱 : ${item.name}</h5>
+                        <div class="item-price">NT$ ${item.price}</div>
+                    </div>
+                    <div class="remove-btn" onclick="removeItem(${index})">×</div>
+                `;
+                
+                container.appendChild(itemDiv);
+            });
+            
+            updateTotalPrice();
+        }
+
+        function removeItem(index) {
+            const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+            cartItems.splice(index, 1);
+            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+            loadCartItems();
+            
+            if (cartItems.length === 0) {
+                window.history.back();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCartItems);
+
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!selectedDelivery) {
+                alert('請選擇花禮送達地點');
+                return;
+            }
+            alert('訂購成功！我們會盡快與您聯繫。');
+            localStorage.removeItem('cartItems');
+            window.history.back();
+        });
+    </script>
+
+    <div class="copyright">
+        © {% now "Y" %} 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
+    </div>
+    <div class="shopping-cart-btn" onclick="openCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-count" id="cartCount">0</span>
+        <span>購物車</span>
+    </div>
+
+</body>
+</html>

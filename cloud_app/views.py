@@ -128,7 +128,8 @@ def preview_obituary(request):
                 gift = {
                     'name': name or '無名稱',
                     'price': price or '無價格',
-                    'image': None
+                    'image': None,
+                    'orderable': request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'
                 }
                 
                 # 檢查是否有圖片文件
@@ -181,7 +182,7 @@ def preview_obituary(request):
                         # print(f"生活照 {key} 處理錯誤: {str(e)}")
             
             preview_data['life_photos'] = life_photos
-            # print(f"最終處理的生活照數量: {len(life_photos)}")
+            # print(f"最終���理的生活照數量: {len(life_photos)}")
 
         except Exception as e:
             pass
@@ -225,3 +226,7 @@ def preview_obituary(request):
         return render(request, 'preview_obituary.html', {'data': preview_data})
 
     return redirect('create_obituary')
+
+@login_required(login_url='login')
+def buy_car(request):
+    return render(request, 'buy_car.html')

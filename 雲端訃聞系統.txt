@@ -21,21 +21,26 @@ title icon : 60 * 40
 	- 列出所有雲端訃聞 : 訃聞搜尋結果頁面(obituary_search.html)
 	- 製作新的雲端訃聞 : 訃聞製作頁面(obituary_maker.html)
 
-background : 385A52
-title_container : B9AD9A
-active : B87070
-transparent
+顏色配表 : 
+	background : 385A52
+	title_container : B9AD9A
+	active : B87070
+	透明 : transparent
+
+購物車表單需使用google 應用程式密碼，崁入setting.py中，需要測試
 
 範本 : 
 	https://obituarycloud.yuanduo.co/Index/Index/66d7f7d9d7e30
 	https://obituarycloud.yuanduo.co/Index/Index/66b2cb9820bd7
+	https://obituarycloud.yuanduo.co/Index/Index/672f32e3e1511
 	
 youtube範本 : https://www.youtube.com/watch?time_continue=8&v=OxGjV29kL1Q&source_ve_path=MjM4NTE
 
 功能實現
 	1. 按讚功能
-	2. 最上方要有logo
-	3. 最下方版權宣言
+	2. 購物車顯示
+	3. 購物車頁面與切換
+	4. 新訃聞編輯頁需要多一個欄位 : 購務車須知
 
 要調整的
 	obituahry_maker.html
@@ -86,3 +91,7 @@ Geocoding API
                 preview_data['deceased_photo'] = f'data:image/jpeg;base64,{photo_data}'
             except Exception as e:
                 print(f"個人照片處理錯誤：{str(e)}")
+				
+				
+行銷部要提供的資料
+1. 裝飾線(.SVG檔案)

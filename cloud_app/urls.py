@@ -11,4 +11,5 @@ urlpatterns = [
     path('obituary/create/', views.create_obituary, name='create_obituary'),
     path('obituary/search/', views.search_obituary, name='search_obituary'),
     path('preview_obituary/', views.preview_obituary, name='preview_obituary'),
+    path('buy_car/', views.buy_car, name='buy_car'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
