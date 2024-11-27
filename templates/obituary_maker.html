@@ -34,6 +34,7 @@
         
         .form-label {
             font-size: 1.6em;
+            {% comment %} background-color : #B9AD9A {% endcomment %}
         }
 
         .form-control {
@@ -46,6 +47,7 @@
         
         .btn-submit {
             width: 200px;
+            color: white;
         }
 
         .preview-box {
@@ -65,18 +67,18 @@
 
         .preview-box img {
             width: 100% !important;
-            height: 500px !important;
+            height: 300px !important;
             object-fit: cover;
             object-position: top;
             border-radius: 5px;
         }
 
-        .desktop-preview img,
-        .mobile-preview img {
+        .desktop-preview img {
+        {% comment %} .mobile-preview img { {% endcomment %}
             width: 100% !important;
-            height: 1000px !important;
+            height: 300px !important;
             object-fit: cover;
-            display: block;
+            {% comment %} display: block; {% endcomment %}
         }
 
         @font-face {
@@ -138,6 +140,25 @@
             background-color: #3a66bf;
             border-color: #3a66bf;
         }
+
+        .btn-info {
+            background-color: #385A52;
+            border-color: #4a76cf;
+        }
+        
+        .btn-info:hover {
+            background-color: #B9AD9A;
+            border-color: #3a66bf;
+            color: white;
+        }
+
+        {% comment %} 分隔線粗細 {% endcomment %}
+        hr.my-4 {
+            height: 5px;
+            background-color: red; /* 设置颜色 */
+            border: none; /* 移除默认边框 */
+            color: red;
+        }
     </style>
     <!-- <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script> -->
 </head>
@@ -158,8 +179,8 @@
                         <label class="form-label">背景音樂</label>
                         <select class="form-select" name="background_music" id="background_music">
                             <option value="">請選擇禮儀音樂</option>
-                            <option value="1">佛教音樂一</option>
-                            <option value="2">佛教音樂二</option>
+                            <option value="{% static 'audio/1.m4a' %}">法鼓山-我為你祝福</option>
+                            {% comment %} <option value="2">佛教音樂二</option> {% endcomment %}
                         </select>
                     </div>
                     
@@ -171,12 +192,12 @@
                             <option value="{{ i }}">桌電背景 {{ i }}</option>
                             {% endfor %}
                         </select>
-                        <select class="form-select" name="mobile_background" id="mobile_background" onchange="previewBackground('mobile')">
+                        {% comment %} <select class="form-select" name="mobile_background" id="mobile_background" onchange="previewBackground('mobile')">
                             <option value="">請選擇手機背景 (600×3500)</option>
                             {% for i in "123" %}
                             <option value="{{ i }}">手機背景 {{ i }}</option>
                             {% endfor %}
-                        </select>
+                        </select> {% endcomment %}
                     </div>
                     
                     <div class="col-md-4">
@@ -189,20 +210,20 @@
                 </div>
 
                 <div class="preview-section mb-4">
-                    <h5 class="mb-3">背景預覽 (1/5 比例)</h5>
+                    <h5 class="mb-3">背景預覽區</h5>
                     <div class="row">
                         <div class="col-md-8">
                             <div class="preview-box desktop-preview">
-                                <h5>桌電版背景</h5>
-                                <img id="preview_desktop" src="" alt="桌電背景預覽" style="display: none;">
+                                <h5>桌電背景預覽區</h5>
+                                <img id="preview_desktop" src="" alt="桌電背景預覽區" style="display: none;">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        {% comment %} <div class="col-md-4">
                             <div class="preview-box mobile-preview">
                                 <h5>手機版背景</h5>
                                 <img id="preview_mobile" src="" alt="手機背景預覽" style="display: none;">
                             </div>
-                        </div>
+                        </div> {% endcomment %}
                     </div>
                 </div>
 
@@ -263,6 +284,8 @@
                     <textarea class="form-control" id="ceremony_details" name="ceremony_details" rows="4" placeholder = "請輸入告別式說明"></textarea>
                 </div>
 
+                <hr class="my-4">
+
                 <div class="form-group">
                     <label class="form-label">儀式流程</label>
                     <div id="ceremony_process_list" class="mb-3">
@@ -292,6 +315,8 @@
                         <img id="backPreview" src="" alt="反面圖片預覽" style="max-height: 200px; max-width: 150px; object-fit: contain;">
                     </div>
                 </div>
+
+                <hr class="my-4">
 
                 <div class="form-group">
                     <label class="form-label">位置資訊</label>
@@ -349,6 +374,8 @@
                     </div>
                 </div>
 
+                <hr class="my-4">
+
                 <div class="form-group">
                     <label class="form-label">致贈花禮</label>
                     <textarea class="form-control mb-3" id="flower_gift_description" name="flower_gift_description" rows="3" placeholder="請輸入致贈花禮的說明"></textarea>
@@ -366,6 +393,8 @@
                     <button type="button" class="btn btn-primary w-100 mt-3" onclick="addFlowerGift()">新增花禮</button>
                 </div>
 
+                <hr class="my-4">
+
                 <div class="form-group">
                     <label class="form-label">回憶錄</label>
                     <input type="url" class="form-control" id="memorial_video" name="memorial_video" placeholder="請輸入 YouTube 網址">
@@ -374,6 +403,8 @@
                     </div>
                 </div>
 
+                <hr class="my-4">
+
                 <div class="form-group">
                     <label class="form-label">生活照</label>
                     <div class="row" id="life_photos_list">
@@ -381,6 +412,8 @@
                     </div>
                     <button type="button" class="btn btn-primary w-100 mt-3" onclick="addLifePhoto()">新增生活照</button>
                 </div>
+
+                <hr class="my-4">
 
                 <div class="form-group">
                     <label class="form-label">承辦人員</label>
@@ -637,7 +670,7 @@
             const desktopSelect = document.getElementById('desktop_background');
             const mobileSelect = document.getElementById('mobile_background');
             const previewDesktop = document.getElementById('preview_desktop');
-            const previewMobile = document.getElementById('preview_mobile');
+            {% comment %} const previewMobile = document.getElementById('preview_mobile'); {% endcomment %}
             
             if (type === 'desktop' && desktopSelect.value) {
                 const desktopPath = "{% static 'cloud_obituary/desktop/' %}" + desktopSelect.value + ".jpg";
@@ -646,12 +679,12 @@
                 previewDesktop.parentElement.style.backgroundColor = 'white';
             }
             
-            if (type === 'mobile' && mobileSelect.value) {
+            {% comment %} if (type === 'mobile' && mobileSelect.value) {
                 const mobilePath = "{% static 'cloud_obituary/mobile/' %}" + mobileSelect.value + ".jpg";
                 previewMobile.src = mobilePath;
                 previewMobile.style.display = 'block';
                 previewMobile.parentElement.style.backgroundColor = 'white';
-            }
+            } {% endcomment %}
         }
 
         // 移除原有的背景置相關代碼

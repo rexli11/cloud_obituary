@@ -86,6 +86,7 @@
             background-color: transparent;
             position: relative;
             overflow: hidden;
+            border-radius: 10px; /* 相片圓角 */
         }
         
         .photo-label {
@@ -145,6 +146,7 @@
             padding: 30px;
             margin: 20px auto;
             max-width: 1200px;
+            opacity: 0.9; /* 整个容器的透明度为90% */
         }
         
         .ceremony-process-content {
@@ -367,18 +369,19 @@
             margin: 0;
         }
 
+        {% comment %} 儀式流程交互顏色調整 {% endcomment %}
         .ceremony-list li {
             display: flex;
             align-items: center;
             margin-bottom: 15px;
             padding: 10px 15px;
-            background-color: #f8f9fa;
+            background-color: #fff;
             border-radius: 5px;
             transition: background-color 0.3s;
         }
 
         .ceremony-list li:nth-child(odd) {
-            background-color: #B9AD9A;
+            background-color: #fff;
         }
 
         {% comment %} .ceremony-list li:hover {
@@ -615,7 +618,7 @@
 
         .info-list li span {
             width: 100px;
-            color: #B87070;
+            color: #ae9374;
             font-weight: bold;
         }
 
@@ -1086,7 +1089,7 @@
         .time-block {
             min-width: 150px;  /* 固定寬度 */
             padding: 8px 12px;  /* 上下8px, 左右12px的內邊距 */
-            min-height: 50px;
+            min-height: 43px;
             background-color: #385A52;
             color: white;
             border-radius: 5px;
@@ -1096,12 +1099,16 @@
             line-height: 1.5;
         }
 
+        {% comment %} .time-block:nth-child(odd) {
+            background-color: #B9AD9A;
+        } {% endcomment %}
+
         /* 內容方塊樣式 */
         .content-block {
             flex: 1;
             margin: 0;
             padding: 8px 15px;  /* 上下8px, 左右15px的內邊距 */
-            background-color: #385A52;
+            background-color: #b39a78;
             border-radius: 5px;
             color: white;
             font-size: 16px;
@@ -1110,7 +1117,7 @@
 
         .footer-container {
             background-color: #fff;
-            padding: 10px 0;
+            padding: 5px 0;
             width: 100%;
             position: relative;
             z-index: 2;
@@ -1141,7 +1148,7 @@
         .item {
             width: 500px;  /* 固定寬度 */
             padding: 20px;
-            margin: 10px 20px;
+            margin: 10px 10px;
             display: flex;
             align-items: center;
             background-color: white;
@@ -1201,7 +1208,7 @@
         /* 公司其他連結露出 */
         .footer-bottom-conpany-info {
             background-color: #B9AD9A;
-            color: rgba(255, 255, 255, 0.8);
+            color: #fff;
             text-align: center;
             padding: 20px 0;
             font-size: 16px;
@@ -1209,6 +1216,10 @@
             z-index: 2;
             width: 100%;  /* 確保寬度 100% */
             bottom: 0;    /* 確保在底部 */
+        }
+
+        .footer-bottom-conpany-info a {
+            color: #385A52;
         }
 
         /* 版權宣告樣式 */
@@ -1290,6 +1301,7 @@
         .order-button .btn {
             width: 100%;
             padding: 5px 10px;
+            font-size: 14px;
         }
 
         .btn-primary {
@@ -1354,6 +1366,57 @@
         .shopping-cart-btn:hover {
             transform: translateY(-50%) scale(1.1);  /* 保持垂直位置並放大 */
         }
+
+        /* 分享按鈕容器 */
+        .share-links {
+            position: fixed;
+            right: 33px; /* 位置居中 */
+            bottom: 290px; /* 調整位置到分享按鈕上方 */
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 999;
+            align-items: center; /* 確保圖標水平居中 */
+        }
+
+        /* 分享圖標樣式 */
+        .share-links a {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .share-links a:hover {
+            transform: scale(1.1);
+        }
+
+        .share-links img {
+            width: 40px;
+            height: 40px;
+        }
+
+        /* 分享按鈕展開/收合的動畫 */
+        .share-links.show {
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px); /* 從下往上滑入 */
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1406,7 +1469,7 @@
                     
                     {% if not data.hide_death_date and data.death_date %}
                         <div class="date-item">
-                            卒於 {{ data.death_date }}
+                            辭世 {{ data.death_date }}
                         </div>
                     {% endif %}
                 </div>
@@ -1630,7 +1693,7 @@
                                                         </button>
                                                     {% else %}
                                                         <button class="btn btn-secondary btn-sm" onclick="contactService()">
-                                                            聯繫楊子客服
+                                                            無法訂購 請聯繫楊子客服
                                                         </button>
                                                     {% endif %}
                                                 </div>
@@ -1767,7 +1830,7 @@
         e.stopPropagation();
     });
 
-    // 添加鍵盤事件監���
+    // 添加鍵盤事件監控
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             hideFullscreen();
@@ -1828,12 +1891,20 @@
         <button class="float-btn share-btn" onclick="shareContent()">
             <i class="fas fa-share-alt"></i>
         </button>
+        <div class="share-links">
+            <a href="" target="_blank">
+              <img src="/static/images/fb-icon.svg" alt="">
+            </a>
+            <a href="" target="_blank">
+              <img src="/static/images/line-icon.svg" alt="">
+            </a>
+          </div>
         
         <!-- 音樂按鈕 -->
         <button class="float-btn music-btn" onclick="toggleMusic()">
             <i class="fas fa-music"></i>
             <audio id="background_music" loop>
-                <source src="{{ data.background_music_url }}" type="audio/mpeg">
+                <source src="{{ data.background_music }}" type="audio/mpeg">
             </audio>
         </button>
         
@@ -1849,30 +1920,66 @@
     <script>
     // 分享功能
     function shareContent() {
-        if (navigator.share) {
-            navigator.share({
-                title: '訃聞資訊',
-                url: window.location.href
-            })
-            .catch(console.error);
+        const shareLinks = document.querySelector('.share-links');
+        if (shareLinks.classList.contains('show')) {
+            shareLinks.classList.remove('show');
+        } else {
+            shareLinks.classList.add('show');
         }
     }
 
+    // 點擊其他地方時收合分享按鈕
+    document.addEventListener('click', function(event) {
+        const shareBtn = document.querySelector('.share-btn');
+        const shareLinks = document.querySelector('.share-links');
+        if (!shareBtn.contains(event.target) && !shareLinks.contains(event.target)) {
+            shareLinks.classList.remove('show');
+        }
+    });
+
     // 音樂控制
     let isPlaying = false;
+    const audio = document.getElementById('background_music');
+    const musicBtn = document.querySelector('.music-btn');
+
     function toggleMusic() {
-        const audio = document.getElementById('background_music');
-        const musicBtn = document.querySelector('.music-btn');
-        
-        if (isPlaying) {
-            audio.pause();
-            musicBtn.classList.remove('playing');
+        if (!isPlaying) {
+            // 開始播放
+            audio.play()
+                .then(() => {
+                    isPlaying = true;
+                    musicBtn.classList.add('playing');
+                })
+                .catch((error) => {
+                    console.error('播放失敗:', error);
+                    alert('音樂播放失敗，請稍後再試');
+                });
         } else {
-            audio.play();
-            musicBtn.classList.add('playing');
+            // 暫停播放
+            audio.pause();
+            isPlaying = false;
+            musicBtn.classList.remove('playing');
         }
-        isPlaying = !isPlaying;
     }
+
+    // 頁面載入時預加載音樂
+    document.addEventListener('DOMContentLoaded', function() {
+        audio.load();
+    });
+
+    // 監聽音樂播放結束事件
+    audio.addEventListener('ended', function() {
+        // 因為設置了 loop，這個事件可能不會觸發
+        isPlaying = false;
+        musicBtn.classList.remove('playing');
+    });
+
+    // 監聽音樂播放錯誤事件
+    audio.addEventListener('error', function(e) {
+        console.error('音樂播放錯誤:', e);
+        isPlaying = false;
+        musicBtn.classList.remove('playing');
+    });
 
     // 回到頂部功能
     window.onscroll = function() {
@@ -1931,7 +2038,7 @@
         
         localStorage.setItem('cartItems', JSON.stringify(cartItems));
         updateCartCount();
-        alert('已加入購物車！');
+        alert('已加入花禮購物車！');
     }
     
     // 更新購物車數量顯示
@@ -1982,13 +2089,14 @@
         </div>
     </div>
     <div class="footer-bottom-conpany-info">
-        <a href="https://www.leniency.com.tw/" target="_blank">楊子佛教官網</a> 
+        <a>楊子佛教相關連結 >> </a>
+        <a href="https://www.leniency.com.tw/" target="_blank"> 楊子佛教官網</a> 
         <a> | </a>
-        <a href="https://www.leniency.com.tw/" target="_blank">楊子佛教粉絲團</a>
+        <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> 楊子佛教粉絲團</a>
         <a> | </a>
-        <a href="https://www.leniency.com.tw/" target="_blank">楊子佛教Youtube</a>
+        <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> 楊子佛教Youtube</a>
         <a> | </a>
-        <a href="https://www.leniency.com.tw/" target="_blank">留下您的Google評論</a>
+        <a href="https://maps.app.goo.gl/cQEdZ9SVdXe9d4zm7" target="_blank"> 留下您的Google評論</a>
     </div>
     <div class="copyright">
         © {% now "Y" %} 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
@@ -1996,7 +2104,7 @@
     <div class="shopping-cart-btn" onclick="openCart()">
         <i class="fas fa-shopping-cart"></i>
         <span class="cart-count" id="cartCount">0</span>
-        <span>購物車</span>
+        <span>花禮購物車</span>
     </div>
 </body>
 </html>

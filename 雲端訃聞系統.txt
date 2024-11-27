@@ -34,19 +34,29 @@ title icon : 60 * 40
 	https://obituarycloud.yuanduo.co/Index/Index/66b2cb9820bd7
 	https://obituarycloud.yuanduo.co/Index/Index/672f32e3e1511
 	
-youtube範本 : https://www.youtube.com/watch?time_continue=8&v=OxGjV29kL1Q&source_ve_path=MjM4NTE
+youtube範本 : https://www.youtube.com/watch?v=OxGjV29kL1Q&t=8s
 
 功能實現
-	1. 按讚功能
-	2. 購物車顯示
-	3. 購物車頁面與切換
+	1. 按讚功能 - 用連結map取代
+	2. 購物車顯示 - 完成
+	3. 購物車頁面與切換 - 完成
 	4. 新訃聞編輯頁需要多一個欄位 : 購務車須知
+	5. 預覽完成後發布需要不同網址的動態URL頁面
+	6. 音樂功能
+	7. 手機板背景移除
 
 要調整的
 	obituahry_maker.html
 		1. 靈堂輸入要與告別式分開紀錄，這是兩個不同的項目，只是切換
 		2. 背景圖載入時被裁切，只要顯示上半部即可
 		3. 其他程式碼目前正常，不要更動
+	account
+		1. 需要的帳號列表
+		2. 設定權限
+	花禮
+		僅需送告別式
+	各卡片區域
+		添加透明度90% opacity
 
 限制 : 
 字體 : 標楷體，華康仿宋體
@@ -80,17 +90,6 @@ Geocoding API
 在 settings.py 中設置金鑰：
 在 obituary_maker.html 中更新 API 金鑰：
 需要我幫您完成具體的設置步驟嗎？或是您需要更詳細的說明？
-
-
-# 處理其他照片和數據
-        if 'deceased_photo' in request.FILES:
-            try:
-                photo = request.FILES['deceased_photo']
-                import base64
-                photo_data = base64.b64encode(photo.read()).decode()
-                preview_data['deceased_photo'] = f'data:image/jpeg;base64,{photo_data}'
-            except Exception as e:
-                print(f"個人照片處理錯誤：{str(e)}")
 				
 				
 行銷部要提供的資料

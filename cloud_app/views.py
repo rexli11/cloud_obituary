@@ -96,6 +96,7 @@ def preview_obituary(request):
             'life_photos': [],
             'agent_name': request.POST.get('agent_name', ''),
             'agent_phone': request.POST.get('agent_phone', ''),
+            'background_music': request.POST.get('background_music', ''),
         }
 
         # 處理花禮
@@ -182,7 +183,7 @@ def preview_obituary(request):
                         # print(f"生活照 {key} 處理錯誤: {str(e)}")
             
             preview_data['life_photos'] = life_photos
-            # print(f"最終���理的生活照數量: {len(life_photos)}")
+            # print(f"最終處理的生活照數量: {len(life_photos)}")
 
         except Exception as e:
             pass
