@@ -1649,7 +1649,7 @@
                 <div class="ceremony-process-container">
                     <div class="ceremony-process-content">
                         <div class="head">
-                            <h2>致贈花禮</h2>
+                            <h2>告別式致贈花禮</h2>
                             <div class="ceremony-divider"></div>
                         </div>
 
@@ -1693,7 +1693,7 @@
                                                         </button>
                                                     {% else %}
                                                         <button class="btn btn-secondary btn-sm" onclick="contactService()">
-                                                            無法訂購 請聯繫楊子客服
+                                                            無法訂購 請聯繫客服
                                                         </button>
                                                     {% endif %}
                                                 </div>
@@ -1942,6 +1942,22 @@
     const audio = document.getElementById('background_music');
     const musicBtn = document.querySelector('.music-btn');
 
+    // 頁面載入時自動播放音樂
+    document.addEventListener('DOMContentLoaded', function() {
+        audio.load();
+        // 嘗試自動播放
+        audio.play()
+            .then(() => {
+                isPlaying = true;
+                musicBtn.classList.add('playing');
+            })
+            .catch((error) => {
+                console.error('自動播放失敗:', error);
+                isPlaying = false;
+                musicBtn.classList.remove('playing');
+            });
+    });
+
     function toggleMusic() {
         if (!isPlaying) {
             // 開始播放
@@ -1961,11 +1977,6 @@
             musicBtn.classList.remove('playing');
         }
     }
-
-    // 頁面載入時預加載音樂
-    document.addEventListener('DOMContentLoaded', function() {
-        audio.load();
-    });
 
     // 監聽音樂播放結束事件
     audio.addEventListener('ended', function() {

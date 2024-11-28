@@ -251,7 +251,7 @@
         </div>
 
         <div class="order-form">
-            <h3 class="mb-3">告別式 花禮訂購資訊</h3>
+            <h3 class="mb-3"><span id="deceasedName"></span> 告別式 花禮訂購資訊</h3>
             <form id="orderForm">
                 <div class="mb-3">
                     <label class="form-label">訂購人姓名</label>
@@ -263,17 +263,10 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">花禮送至</label>
-                    <div class="delivery-options">
-                        <div class="delivery-option" data-value="tomb" onclick="selectDelivery(this)">送靈堂</div>
-                        <div class="delivery-option" data-value="farewell" onclick="selectDelivery(this)">送告別式</div>
-                        <div class="delivery-option" data-value="both" onclick="selectDelivery(this)">均送</div>
+                    <div class="form-control" style="background-color: #f8f9fa;" id="deliveryAddress">
+                        <!-- JavaScript 將在這裡填入告別式會場地址 -->
                     </div>
-                    <input type="hidden" name="delivery_option" id="deliveryOption" required>
                 </div>
-                {% comment %} <div class="mb-3">
-                    <label class="form-label">送貨地址</label>
-                    <input type="text" class="form-control" required>
-                </div> {% endcomment %}
                 <div class="mb-3">
                     <label class="form-label">備註</label>
                     <textarea class="form-control" rows="3"></textarea>
@@ -305,33 +298,36 @@
             window.history.back();
         }
 
-        let selectedDelivery = '';
-        let baseTotal = 0;
-
-        function selectDelivery(element) {
-            // 移除所有選項的活動狀態
-            document.querySelectorAll('.delivery-option').forEach(opt => {
-                opt.classList.remove('active');
-            });
+        // 頁面載入時設置送貨地址和往生者姓名
+        document.addEventListener('DOMContentLoaded', function() {
+            // 從 localStorage 獲取告別式會場地址
+            const farewell_address = localStorage.getItem('farewell_location_address');
+            const addressElement = document.getElementById('deliveryAddress');
             
-            // 添加當前選項的活動狀態
-            element.classList.add('active');
+            console.log('Retrieved address:', farewell_address);  // 添加調試信息
             
-            // 保存選擇的值
-            selectedDelivery = element.dataset.value;
-            document.getElementById('deliveryOption').value = selectedDelivery;
-            
-            // 更新總價
-            updateTotalPrice();
-        }
-
-        function updateTotalPrice() {
-            let total = baseTotal;
-            if (selectedDelivery === 'both') {
-                total *= 2;
+            if (farewell_address && farewell_address.trim() !== '') {
+                addressElement.textContent = farewell_address;
+            } else {
+                addressElement.textContent = '未設置告別式會場地址';
             }
-            document.getElementById('totalPrice').textContent = total.toLocaleString();
-        }
+
+            // 從 localStorage 獲取往生者姓名
+            const deceasedName = localStorage.getItem('deceased_name');
+            const deceasedNameElement = document.getElementById('deceasedName');
+            
+            console.log('Retrieved name:', deceasedName);  // 添加調試信息
+            
+            if (deceasedName && deceasedName.trim() !== '') {
+                deceasedNameElement.textContent = deceasedName;
+            }
+            
+            // 初始化購物車
+            loadCartItems();
+        });
+
+        let selectedDelivery = 'farewell'; // 固定為告別式會場
+        let baseTotal = 0;
 
         function loadCartItems() {
             const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
@@ -350,8 +346,8 @@
                 itemDiv.innerHTML = `
                     <img src="${item.image}" alt="${item.name}" onerror="this.src='{% static 'images/default.jpg' %}'">
                     <div class="item-info">
-                        <h5>花禮名稱 : ${item.name}</h5>
-                        <div class="item-price">NT$ ${item.price}</div>
+                        <h5>${item.name}</h5>
+                        <div class="item-price">${item.price}</div>
                     </div>
                     <div class="remove-btn" onclick="removeItem(${index})">×</div>
                 `;
@@ -359,7 +355,7 @@
                 container.appendChild(itemDiv);
             });
             
-            updateTotalPrice();
+            document.getElementById('totalPrice').textContent = baseTotal.toLocaleString();
         }
 
         function removeItem(index) {

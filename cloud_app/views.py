@@ -1,73 +1,180 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.template import Library
+from django.contrib.auth import logout
+import mysql.connector
+from django.conf import settings
 
-register = Library()
+def connection_db():
+    """建立資料庫連線"""
+    try:
+        db = mysql.connector.connect(
+            host=settings.DATABASES['default']['HOST'],
+            user=settings.DATABASES['default']['USER'],
+            password=settings.DATABASES['default']['PASSWORD'],
+            database=settings.DATABASES['default']['NAME'],
+            port=settings.DATABASES['default']['PORT']
+        )
+        return db
+    except mysql.connector.Error as err:
+        print(f"資料庫連線錯誤: {err}")
+        return None
 
-@register.filter
-def split(value, arg):
-    return value.split(arg)
-
-def home_view(request):
-    return render(request, 'base.html')
+def check_permissions(request, requested_page=None):
+    """
+    從 session 檢查用戶權限
+    requested_page: 'case_management' | 'obituary' | 'dashboard'
+    """
+    permission_level = request.session.get('permission_level')
+    
+    if permission_level is None:
+        return None
+        
+    # 如果沒有指定頁面，只返回權限等級
+    if not requested_page:
+        return permission_level
+        
+    # 管理員可以訪問所有頁面
+    if permission_level == '0':
+        return True
+        
+    # 檢查特定頁面的訪問權限
+    if requested_page == 'case_management':
+        return permission_level in ['1', '2']
+    elif requested_page == 'obituary':
+        return permission_level in ['1', '3']
+    elif requested_page == 'dashboard':
+        return permission_level in ['1', '2', '3', '4']
+        
+    return False
 
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+        next_url = request.POST.get('next', '')
         
-        if user is not None:
-            login(request, user)
-            next_url = request.POST.get('next', '')
-            if next_url:
-                return redirect(next_url)
-            return redirect('home')
-        else:
-            messages.error(request, '帳號或密碼錯誤')
+        print(f"登入嘗試 - 用戶名: {username}")  # 调试信息
+        
+        db = connection_db()
+        if db is None:
+            messages.error(request, '系統錯誤，請稍後再試')
+            return render(request, 'login.html')
+        
+        cursor = db.cursor()
+        try:
+            cursor.execute("""
+                SELECT u.user_id, u.username, u.password, p.permission_type
+                FROM users u
+                LEFT JOIN permissions p ON u.user_id = p.user_id
+                WHERE u.username = %s AND u.password = %s
+            """, [username, password])
+            user_data = cursor.fetchone()
+            
+            if user_data:
+                print(f"登入成功 - 用戶數據: {user_data}")  # 调试信息
+                
+                request.session['user_id'] = user_data[0]
+                request.session['username'] = user_data[1] 
+                request.session['permission_level'] = user_data[3]
+                request.session['is_authenticated'] = True
+                
+                # 登入成功後直接重定向到首頁
+                return redirect('home')
+            else:
+                print("登入失敗 - 用戶名或密碼錯誤")  # 调试信息
+                messages.error(request, '帳號或密碼錯誤')
+                return render(request, 'login.html', {'next': next_url})
+        
+        except mysql.connector.Error as err:
+            print(f"數據庫錯誤: {err}")  # 调试信息
+            messages.error(request, '系統錯誤，請稍後再試')
+            return render(request, 'login.html', {'next': next_url})
+        
+        finally:
+            cursor.close()
+            db.close()
     
+    # GET 請求
     next_url = request.GET.get('next', '')
     return render(request, 'login.html', {'next': next_url})
 
+def home_view(request):
+    if not request.session.get('user_id'):
+        return redirect('login')
+    
+    permission_level = request.session.get('permission_level')
+    print(f"首頁訪問 - 權限等級: {permission_level}")  # 调试信息
+    
+    context = {
+        'username': request.session.get('username'),
+        'can_access_case': permission_level in ['0', '1', '2'],
+        'can_access_obituary': permission_level in ['0', '1', '3'],
+        'can_access_dashboard': permission_level in ['0', '1', '2', '3', '4']
+    }
+    return render(request, 'base.html', context)
+
 def logout_view(request):
+    """登出用戶"""
+    # 清除 session
+    request.session.flush()
+    # 執行登出
     logout(request)
+    # 重定向到首頁
     return redirect('home')
 
 @login_required(login_url='login')
 def obituary_base(request):
-    return render(request, 'obituary_base.html')
+    """訃聞製作基礎頁面"""
+    # 添加调试信息
+    print(f"訪問訃聞頁面")
+    print(f"Session 數據: {dict(request.session)}")
+    print(f"權限等級: {request.session.get('permission_level')}")
+    
+    permission_level = request.session.get('permission_level')
+    
+    if permission_level in ['0', '1', '3']:
+        return render(request, 'obituary_base.html')
+    else:
+        messages.error(request, '您沒有權限訪問此頁面')
+        return redirect('home')
 
 @login_required(login_url='login')
 def create_obituary(request):
-    if request.method == 'POST':
-        # 處理表單提交的邏輯
-        pass
+    """創建新訃聞"""
+    # 檢查用戶是否已登入
+    if not request.session.get('user_id'):
+        messages.error(request, '請先登入')
+        return redirect('login')
+    
+    # 檢查用戶權限
+    permission_level = request.session.get('permission_level')
+    if permission_level not in [0, 1, 3]:  # 只有管理員、第一級和第三級權限可以訪問
+        messages.error(request, '您沒有權限訪問此頁面')
+        return redirect('home')
+    
     return render(request, 'obituary_maker.html')
 
 @login_required(login_url='login')
 def search_obituary(request):
+    """搜尋訃聞"""
+    # 檢查用戶是否已登入
+    if not request.session.get('user_id'):
+        messages.error(request, '請先登入')
+        return redirect('login')
+    
+    # 檢查用戶權限
+    permission_level = request.session.get('permission_level')
+    if permission_level not in [0, 1, 3]:
+        messages.error(request, '您沒有權限訪問此頁面')
+        return redirect('home')
+    
     return render(request, 'search_obituary.html')
 
 @login_required(login_url='login')
 def preview_obituary(request):
+    """覽訃聞"""
     if request.method == 'POST':
-        # 處理 YouTube URL
-        memorial_video = request.POST.get('memorial_video', '')
-        if memorial_video and 'youtube.com' in memorial_video:
-            # 從 URL 中提取影片 ID
-            if 'watch?v=' in memorial_video:
-                video_id = memorial_video.split('watch?v=')[1].split('&')[0]
-            elif 'youtu.be/' in memorial_video:
-                video_id = memorial_video.split('youtu.be/')[1].split('?')[0]
-            else:
-                video_id = ''
-            
-            # 生成嵌入式 URL
-            if video_id:
-                memorial_video = f'https://www.youtube.com/embed/{video_id}'
-
         preview_data = {
             'deceased_name': request.POST.get('deceased_name', ''),
             'birth_date': request.POST.get('birth_date', ''),
@@ -76,7 +183,6 @@ def preview_obituary(request):
             'hide_death_date': request.POST.get('hide_death_date') == 'on',
             'ceremony_details': request.POST.get('ceremony_details', ''),
             'desktop_background': request.POST.get('desktop_background', ''),
-            'mobile_background': request.POST.get('mobile_background', ''),
             'font_style': request.POST.get('font_style', 'fangsong'),
             'ceremony_times': [],
             'deceased_photo': None,
@@ -92,142 +198,46 @@ def preview_obituary(request):
             'tomb_traffic_info': request.POST.get('tomb_traffic_info', ''),
             'flower_gift_description': request.POST.get('flower_gift_description', ''),
             'flower_gifts': [],
-            'memorial_video': memorial_video,
             'life_photos': [],
             'agent_name': request.POST.get('agent_name', ''),
             'agent_phone': request.POST.get('agent_phone', ''),
             'background_music': request.POST.get('background_music', ''),
         }
-
-        # 處理花禮
-        try:
-            flower_gifts = []
-            indices = set()
-            # 測試接收
-            # print("所有 POST 鍵值:", request.POST.keys())
-            # print("所有 FILES 鍵值:", request.FILES.keys())
-            
-            # 修改索引提取方式
-            for key in request.POST:
-                if 'flower_gift_list[' in key and '][name]' in key:
-                    index = key.split('[')[1].split(']')[0]
-                    indices.add(index)
-            
-            # print(f"找到的花禮索引: {indices}")
-
-            for index in sorted(indices):
-                name = request.POST.get(f'flower_gift_list[{index}][name]', '').strip()
-                price = request.POST.get(f'flower_gift_list[{index}][price]', '').strip()
-                image_key = f'flower_gift_list[{index}][image]'
-                # 測試接收值
-                # print(f"處理花禮 {index}:")
-                # print(f"- 名稱: {name}")
-                # print(f"- 價格: {price}")
-                # print(f"- 圖片鍵值: {image_key}")
-                
-                # 創建花禮對象
-                gift = {
-                    'name': name or '無名稱',
-                    'price': price or '無價格',
-                    'image': None,
-                    'orderable': request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'
-                }
-                
-                # 檢查是否有圖片文件
-                image_file = request.FILES.get(image_key)
-                if image_file:
-                    # print(f"- 找到圖片文件: {image_file.name}")
-                    try:
-                        import base64
-                        photo_data = base64.b64encode(image_file.read()).decode()
-                        gift['image'] = f'data:{image_file.content_type};base64,{photo_data}'
-                        # print("- 成功處理圖片")
-                    except Exception as e:
-                        pass
-                        # print(f"- 圖片處理錯誤: {str(e)}")
-                else:
-                    pass
-                    # print(f"- 未找到圖片文件: {image_key}")
-                
-                flower_gifts.append(gift)
-                # print(f"- 成功添加花禮: {gift}")
-            
-            preview_data['flower_gifts'] = flower_gifts
-            # print(f"最終處理的花禮數量: {len(flower_gifts)}")
-            
-        except Exception as e:
-            pass
-            # print(f"花禮處理錯誤：{str(e)}")
-            # import traceback
-            # print(traceback.format_exc())
-
-        # 處理生活照
-        try:
-            life_photos = []
-            
-            # 從 FILES 中獲取生活照
-            life_photo_keys = sorted([k for k in request.FILES.keys() if k.startswith('life_photos[')])
-            # print(f"找到的生活照文件鍵值: {life_photo_keys}")
-            
-            for key in life_photo_keys:
-                photo = request.FILES[key]
-                if photo and photo.content_type.startswith('image/'):
-                    try:
-                        # print(f"處理生活照: {key}")
-                        import base64
-                        photo_data = base64.b64encode(photo.read()).decode()
-                        life_photos.append(f'data:{photo.content_type};base64,{photo_data}')
-                        # print(f"成功處理生活照: {key}")
-                    except Exception as e:
-                        pass
-                        # print(f"生活照 {key} 處理錯誤: {str(e)}")
-            
-            preview_data['life_photos'] = life_photos
-            # print(f"最終處理的生活照數量: {len(life_photos)}")
-
-        except Exception as e:
-            pass
-            # print(f"生活照處理錯誤：{str(e)}")
-            # import traceback
-            # print(traceback.format_exc())
-
-        # 處理其他照片和數據
-        try:
-            if 'deceased_photo' in request.FILES:
-                photo = request.FILES['deceased_photo']
-                import base64
-                photo_data = base64.b64encode(photo.read()).decode()
-                preview_data['deceased_photo'] = f'data:image/jpeg;base64,{photo_data}'
-        except Exception as e:
-            pass
-            # print(f"個人照片處理錯誤：{str(e)}")
-
-        # 處理儀式流程
-        try:
-            times = request.POST.getlist('ceremony_time[]')
-            contents = request.POST.getlist('ceremony_content[]')
-            if times and contents:
-                preview_data['ceremony_times'] = list(zip(times, contents))
-        except Exception as e:
-            pass
-            # print(f"儀式流程處理錯誤：{str(e)}")
-
-        # 處理訃聞照片
-        try:
-            for photo_type in ['obituary_front_image', 'obituary_back_image']:
-                if photo_type in request.FILES:
-                    photo = request.FILES[photo_type]
-                    import base64
-                    photo_data = base64.b64encode(photo.read()).decode()
-                    preview_data[photo_type] = f'data:image/jpeg;base64,{photo_data}'
-        except Exception as e:
-            pass
-            # print(f"訃聞照片處理錯誤：{str(e)}")
-
         return render(request, 'preview_obituary.html', {'data': preview_data})
-
     return redirect('create_obituary')
 
 @login_required(login_url='login')
 def buy_car(request):
+    """購物車頁面"""
+    if not request.session.get('user_id'):
+        messages.error(request, '請先登入')
+        return redirect('login')
+    
+    # 檢查用戶權限
+    permission_level = request.session.get('permission_level')
+    if permission_level not in [0, 1, 3]:
+        messages.error(request, '您沒有權限訪問此頁面')
+        return redirect('home')
+    
     return render(request, 'buy_car.html')
+
+@login_required(login_url='login')
+def case_management(request):
+    """案件管理頁面"""
+    # 檢查用戶是否已登入
+    if not request.session.get('is_authenticated'):
+        messages.error(request, '請先登入')
+        return redirect('login')
+    
+    # 檢查用戶權限
+    permission_level = request.session.get('permission_level')
+    print(f"Current permission level for case management: {permission_level}")  # 調試用
+    
+    # 轉換權限值為字符串進行比較
+    if str(permission_level) in ['0', '1', '2']:  # 管理員、第一級和第二級權限可以訪問
+        return render(request, 'case_management.html')
+    
+    messages.error(request, '您沒有權限訪問此頁面')
+    return redirect('home')
+
+# ... 其他視圖函數保持不變 ...

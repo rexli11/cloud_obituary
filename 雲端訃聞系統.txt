@@ -26,6 +26,8 @@ title icon : 60 * 40
 	title_container : B9AD9A
 	active : B87070
 	透明 : transparent
+	ae9374
+	b39a78
 
 購物車表單需使用google 應用程式密碼，崁入setting.py中，需要測試
 
@@ -42,14 +44,17 @@ youtube範本 : https://www.youtube.com/watch?v=OxGjV29kL1Q&t=8s
 	3. 購物車頁面與切換 - 完成
 	4. 新訃聞編輯頁需要多一個欄位 : 購務車須知
 	5. 預覽完成後發布需要不同網址的動態URL頁面
-	6. 音樂功能
-	7. 手機板背景移除
+	6. 音樂功能 - ok
+	7. 手機板背景移除 - ok
+	8. 多一個地區選擇欄位 - ok
+	9. 地區選擇，訃聞相關欄位要變換北部或中部資訊
+	10. **是否要設定一個帳密權限管理頁**
+	11. 購物車顯示調整 - ok
 
 要調整的
-	obituahry_maker.html
+	obituahry_maker.html - ok
 		1. 靈堂輸入要與告別式分開紀錄，這是兩個不同的項目，只是切換
 		2. 背景圖載入時被裁切，只要顯示上半部即可
-		3. 其他程式碼目前正常，不要更動
 	account
 		1. 需要的帳號列表
 		2. 設定權限
@@ -89,8 +94,29 @@ Geocoding API
 限制 API 使用範圍
 在 settings.py 中設置金鑰：
 在 obituary_maker.html 中更新 API 金鑰：
-需要我幫您完成具體的設置步驟嗎？或是您需要更詳細的說明？
+
 				
 				
 行銷部要提供的資料
 1. 裝飾線(.SVG檔案)
+
+<div class="mb-3">
+                    <label class="form-label">花禮送至</label>
+                    <div class="delivery-options">
+                        <div class="delivery-option" data-value="tomb" onclick="selectDelivery(this)">送靈堂</div>
+                        <div class="delivery-option" data-value="farewell" onclick="selectDelivery(this)">送告別式</div>
+                        <div class="delivery-option" data-value="both" onclick="selectDelivery(this)">均送</div>
+                    </div>
+                    <input type="hidden" name="delivery_option" id="deliveryOption" required>
+                </div>
+				
+<div class="loca-info" id="farewell-info">
+                                    <ul class="info-list">
+                                        <li>
+                                            <span>會場名稱：</span>
+                                            <p>{{ data.location_name }}</p>
+                                        </li>
+                                        <li>
+                                            <span>會場地址：</span>
+                                            <p>{{ data.location_address }}</p>
+                                        </li>

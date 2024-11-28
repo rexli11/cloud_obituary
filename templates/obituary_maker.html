@@ -74,11 +74,9 @@
         }
 
         .desktop-preview img {
-        {% comment %} .mobile-preview img { {% endcomment %}
             width: 100% !important;
-            height: 300px !important;
+            height: 500px !important;
             object-fit: cover;
-            {% comment %} display: block; {% endcomment %}
         }
 
         @font-face {
@@ -171,7 +169,23 @@
         <div class="form-container">
             <form method="POST" action="{% url 'preview_obituary' %}" enctype="multipart/form-data" id="obituaryForm">
                 {% csrf_token %}
-                
+
+                <h3 class="area_selection">地區選擇</h3>
+                <div class="area_selection_list">
+                    <label class="form-label">請選擇服務處</label>
+                    <select class="form-select" name="area_selection" id="area_selection">
+                        <option value="1">北部服務處</option>
+                        <option value="2">中部服務處</option>
+                        <option value="3">南部服務處</option>
+                    </select>
+                    <div class="form-text text-muted">
+                        地區服務處不顯示於訃聞中，用於統計之用
+                    </div>
+                </div>
+                <br>
+
+                <hr class="my-4">
+
                 <h3 class="mb-4">版面設定</h3>
                 
                 <div class="row mb-4">
@@ -212,18 +226,12 @@
                 <div class="preview-section mb-4">
                     <h5 class="mb-3">背景預覽區</h5>
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-12">
                             <div class="preview-box desktop-preview">
                                 <h5>桌電背景預覽區</h5>
                                 <img id="preview_desktop" src="" alt="桌電背景預覽區" style="display: none;">
                             </div>
                         </div>
-                        {% comment %} <div class="col-md-4">
-                            <div class="preview-box mobile-preview">
-                                <h5>手機版背景</h5>
-                                <img id="preview_mobile" src="" alt="手機背景預覽" style="display: none;">
-                            </div>
-                        </div> {% endcomment %}
                     </div>
                 </div>
 
@@ -231,7 +239,14 @@
 
                 <div class="form-group">
                     <label for="deceased_name" class="form-label">往生者全名</label>
-                    <input type="text" class="form-control" id="deceased_name" name="deceased_name" required placeholder="如 某某某居士、某某某老太夫人">
+                    <input type="text" 
+                           class="form-control" 
+                           id="deceased_name" 
+                           name="deceased_name" 
+                           required 
+                           placeholder="如 某某某居士、某某某老太夫人"
+                           onchange="saveDeceasedName(this.value)"
+                           oninput="saveDeceasedName(this.value)">
                 </div>
 
                 <div class="form-group">
@@ -336,7 +351,13 @@
 
                         <div class="mb-3">
                             <label for="farewell_location_address" class="form-label">會場地址</label>
-                            <input type="text" class="form-control" id="farewell_location_address" name="farewell_location_address" placeholder="請輸入會場地址">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="farewell_location_address" 
+                                   name="farewell_location_address" 
+                                   placeholder="請輸入會場地址"
+                                   onchange="saveFarewellAddress(this.value)"
+                                   oninput="saveFarewellAddress(this.value)">
                         </div>
 
                         <div class="mb-3">
@@ -377,13 +398,13 @@
                 <hr class="my-4">
 
                 <div class="form-group">
-                    <label class="form-label">致贈花禮</label>
+                    <label class="form-label">告別式致贈花禮</label>
                     <textarea class="form-control mb-3" id="flower_gift_description" name="flower_gift_description" rows="3" placeholder="請輸入致贈花禮的說明"></textarea>
 
                     <div class="mb-3">
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-primary" id="send_farewell">送告別式</button>
-                            <button type="button" class="btn btn-outline-primary" id="send_tomb">送靈堂</button>
+                            {% comment %} <button type="button" class="btn btn-outline-primary" id="send_tomb">送靈堂</button> {% endcomment %}
                         </div>
                     </div>
 
@@ -540,7 +561,7 @@
             });
         };
 
-        // 位置資訊按鈕切換
+        // 位置資訊按鈕換
         document.getElementById('farewell_hall').addEventListener('click', function() {
             this.classList.add('btn-primary');
             this.classList.remove('btn-outline-primary');
@@ -620,7 +641,7 @@
             });
         }
 
-        // 更新地圖標記和資訊
+        // 更��地圖標記和資訊
         function updateMap(location, address) {
             map.setCenter(location);
             map.setZoom(16);
@@ -1020,7 +1041,7 @@
             document.body.removeChild(submitForm);
         }
 
-        // 添加切換表單的 JavaScript
+        // 加切換表單的 JavaScript
         function switchLocationForm(type) {
             // 切換按鈕樣式
             if (type === 'farewell') {
@@ -1049,6 +1070,18 @@
                 console.log(pair[0], pair[1]);
             }
         });
+
+        // 保存告別式會場地址到 localStorage
+        function saveFarewellAddress(address) {
+            console.log('Saving address:', address);  // 添加調試信息
+            localStorage.setItem('farewell_location_address', address);
+        }
+
+        // 保存往生者姓名到 localStorage
+        function saveDeceasedName(name) {
+            console.log('Saving name:', name);  // 添加調試信息
+            localStorage.setItem('deceased_name', name);
+        }
     </script>
 </body>
 </html> 

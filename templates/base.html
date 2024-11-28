@@ -91,21 +91,83 @@
                 font-size: 1.4rem;
             }
         }
+        
+        /* 添加用戶資訊區域樣式 */
+        .user-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .username {
+            color: white;
+            background-color: #385A52;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .auth-btn {
+            background-color: #B9AD9A;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .auth-btn:hover {
+            background-color: #2A4840;
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <!-- 添加用戶資訊區域 -->
+    <div class="user-info">
+        {% if request.session.is_authenticated %}
+            <span class="username">用戶名稱 : {{ request.session.username }}</span>
+            <span class="permission-level">權限等級：{{ request.session.permission_level }}</span>
+            <a href="{% url 'logout' %}" class="auth-btn">登出</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="auth-btn">登入</a>
+        {% endif %}
+    </div>
+
     <div class="main-container">
         <h1 class="system-title">楊子佛教禮儀雲端系統</h1>
         <div class="button-container">
-            <a href="{% url 'login' %}" class="service-button">
-                進入雲端案件管理
-            </a>
-            <a href="{% url 'login' %}?next={% url 'obituary_base' %}" class="service-button">
-                進入雲端訃聞製作
-            </a>
-            <a href="https://social-data-dash.onrender.com" class="service-button">
-                進入數據分析儀表板
-            </a>
+            {% if request.session.is_authenticated %}
+                {% if request.session.permission_level in '0,1,2' %}
+                    <a href="{% url 'case_management' %}" class="service-button">
+                        進入雲端案件管理
+                    </a>
+                {% endif %}
+                {% if request.session.permission_level in '0,1,3' %}
+                    <a href="{% url 'obituary_base' %}" class="service-button">
+                        進入雲端訃聞製作
+                    </a>
+                {% endif %}
+                <a href="https://social-data-dash.onrender.com" class="service-button">
+                    進入數據分析儀表板
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="service-button">
+                    進入雲端案件管理
+                </a>
+                <a href="{% url 'login' %}" class="service-button">
+                    進入雲端訃聞製作
+                </a>
+                <a href="https://social-data-dash.onrender.com" class="service-button">
+                    進入數據分析儀表板
+                </a>
+            {% endif %}
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
