@@ -72,9 +72,27 @@
     </style>
 </head>
 <body>
-    {% if user.is_superuser %}
+    <!-- 添加右上角回首页按钮 -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <a href="{% url 'home' %}" class="btn btn-secondary">回首頁</a>
+    </div>
+    
+    {% if request.session.permission_level == '0' %}
     <div class="register-container">
         <h2 class="register-title">楊子雲端系統用戶註冊</h2>
+        
+        <!-- 消息显示区域 -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         <form method="post">
             {% csrf_token %}
             <!-- 用戶名 -->
@@ -87,15 +105,15 @@
             <!-- 密碼 -->
             <div class="form-group">
                 <label class="form-label">登入密碼</label>
-                <input type="password" name="password1" class="form-control" required>
-                {{ form.password1.errors }}
+                <input type="password" name="password" class="form-control" required>
+                {{ form.password.errors }}
             </div>
 
             <!-- 確認密碼 -->
             <div class="form-group">
                 <label class="form-label">確認登入密碼</label>
-                <input type="password" name="password2" class="form-control" required>
-                {{ form.password2.errors }}
+                <input type="password" name="password_confirm" class="form-control" required>
+                {{ form.password_confirm.errors }}
             </div>
 
             <!-- 姓名 -->
@@ -131,32 +149,14 @@
             <!-- 權限 -->
             <div class="form-group">
                 <label class="form-label">權限</label>
-                <div class="d-flex gap-4 ps-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="permission" value="0" id="admin-permission">
-                        <label class="form-check-label" for="admin-permission">
-                            管理員
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="permission" value="1" id="user-permission">
-                        <label class="form-check-label" for="user-permission">
-                            使用者
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="permission" value="obituary_user" id="obituary-permission">
-                        <label class="form-check-label" for="obituary-permission">
-                            雲端訃聞製作
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="permission" value="case_user" id="case-permission">
-                        <label class="form-check-label" for="case-permission">
-                            雲端案件管理
-                        </label>
-                    </div>
-                </div>
+                <select name="permission_type" class="form-select" required>
+                    <option value="">請選擇權限等級</option>
+                    <option value="0">0 - 系統管理員</option>
+                    <option value="1">1 - 管理處職權</option>
+                    <option value="2">2 - 案件登錄職權</option>
+                    <option value="3">3 - 訃聞製作職權</option>
+                    <option value="4">4 - 一般職權</option>
+                </select>
             </div>
 
             <!-- 公司別 -->
@@ -170,16 +170,38 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-register">註冊</button>
+            <!-- 是否啟動 -->
+            <div class="form-group">
+                <label class="form-label">是否啟動</label>
+                <div class="form-check">
+                    <input type="checkbox" name="is_active" class="form-check-input" id="is_active" checked>
+                    <label class="form-check-label" for="is_active">
+                        啟動此帳號
+                    </label>
+                </div>
+            </div>
+
+            <!-- 是否為管理員 -->
+            <div class="form-group">
+                <label class="form-label">是否為管理員</label>
+                <div class="form-check">
+                    <input type="checkbox" name="is_superuser" class="form-check-input" id="is_superuser">
+                    <label class="form-check-label" for="is_superuser">
+                        設為管理員
+                    </label>
+                </div>
+            </div>
+
+            <!-- 按钮组 -->
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-register">註冊</button>
+            </div>
         </form>
     </div>
     {% else %}
     <div class="register-container">
         <h2 class="register-title text-danger">權限不足</h2>
         <p class="text-center">只有系統管理員可以註冊新用戶。</p>
-        <div class="text-center mt-3">
-            <a href="{% url 'home' %}" class="btn btn-secondary">返回首頁</a>
-        </div>
     </div>
     {% endif %}
 </body>

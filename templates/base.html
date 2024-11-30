@@ -120,20 +120,45 @@
             text-decoration: none;
             font-size: 14px;
             transition: background-color 0.3s ease;
+            margin-left: 10px;
         }
         
         .auth-btn:hover {
             background-color: #2A4840;
             color: white;
+            cursor: pointer;
+        }
+        
+        /* 为用户信息添加样式 */
+        .user-info span {
+            color: white;
+            margin-right: 15px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <!-- 添加用戶資訊區域 -->
     <div class="user-info">
+        <span>目前使用的硬碟空間</span>
         {% if request.session.is_authenticated %}
             <span class="username">用戶名稱 : {{ request.session.username }}</span>
+            <span class="company">所屬公司別：{{ request.session.company }}</span>
+            {% comment %} <span class="realname">姓名：{{ request.session.realname }}</span>
+            <span class="phone">電話：{{ request.session.phone }}</span>
+            <span class="email">電子郵件：{{ request.session.email }}</span>
+            <span class="department">部門：{{ request.session.department }}</span>
+            <span class="title">職稱：{{ request.session.title }}</span>
             <span class="permission-level">權限等級：{{ request.session.permission_level }}</span>
+            <span class="company">所屬公司別：{{ request.session.company }}</span>
+            <span class="created_at">註冊日期：{{ request.session.created_at }}</span>
+            <span class="updated_at">更新日期：{{ request.session.updated_at }}</span> {% endcomment %}
+            
+            {% if request.session.permission_level in '0,1' %}
+                <a href="{% url 'register' %}" class="auth-btn">職員註冊</a>
+                <a href="{% url 'preview_employee' %}" class="auth-btn">職員列表</a>
+                <a href="#" class="auth-btn" onclick="alert('功能開發中')">資料修改</a>
+            {% endif %}
             <a href="{% url 'logout' %}" class="auth-btn">登出</a>
         {% else %}
             <a href="{% url 'login' %}" class="auth-btn">登入</a>

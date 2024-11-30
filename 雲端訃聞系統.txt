@@ -1,5 +1,6 @@
-首頁 - 完成，未美化
-登入頁 - 完成，未美化
+yz_admin
+27461271yzadmin
+
 
 路徑 : 
 base(base.html) 
@@ -13,9 +14,14 @@ base(base.html)
 公司super user
 account : rexli
 email : rexli01010629@gmail.com
-password : sk801010629
+password : aaa111
+
 
 title icon : 60 * 40
+
+資料庫遷移
+python manage.py makemigrations
+python manage.py migrate
 
 雲端訃聞製作首頁 - (obituary_base.html)
 	- 列出所有雲端訃聞 : 訃聞搜尋結果頁面(obituary_search.html)
@@ -57,7 +63,12 @@ youtube範本 : https://www.youtube.com/watch?v=OxGjV29kL1Q&t=8s
 		2. 背景圖載入時被裁切，只要顯示上半部即可
 	account
 		1. 需要的帳號列表
-		2. 設定權限
+		2. 設定權限-
+			授權架構
+				由superusers進行註冊
+				設定用戶權限可以看得頁面
+				儲存至資料庫，欄位
+					
 	花禮
 		僅需送告別式
 	各卡片區域
@@ -120,3 +131,91 @@ Geocoding API
                                             <span>會場地址：</span>
                                             <p>{{ data.location_address }}</p>
                                         </li>
+										
+DATABASES = {
+    'default': {
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'mydatabase',
+        'USER': 'rexli',
+        'PASSWORD': 'abc000',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'OPTIONS': {
+            'autocommit': True,
+        },
+    }
+}
+
+以下事項請協助調整與實現
+1. views.py中的login_view需要取的db(yz_cloud)中users表中的username、password、user_id以及使用user_id取得permissions表中的admin、normal_user、obituary、case_user的值
+2. 進入base.html前，需要先彈出式視窗進行login.html >> 驗證權限 >> 進入base.html
+3. views.py中請新增實現驗證權限函式
+	若permission_type的值為 : 0，則所有頁面均可進入
+	若permission_type的值僅為 : 1 - 第一級權限，可進入"進入雲端案件管理"、"進入雲端訃聞製作"、"進入數據分析儀表板"頁
+	若permission_type的值僅為 : 2 - 第二級權限，可進入"進入雲端案件管理"頁、"進入數據分析儀表板"頁
+	若permission_type的值僅為 : 3 - 第三級權限，可進入"進入雲端訃聞製作"頁、"進入數據分析儀表板"頁
+	若permission_type的值僅為 : 4 - 第四級權限，可進入"進入數據分析儀表板"頁
+4. 請勿更動其他功能
+	
+0 - 管理者，全部權限，所有頁面均可進入
+1 - 第一級權限，可進入"進入雲端案件管理"、"進入雲端訃聞製作"、"進入數據分析儀表板"頁
+2 - 第二級權限，可進入"進入雲端案件管理"頁、"進入數據分析儀表板"頁
+3 - 第三級權限，可進入"進入雲端訃聞製作"頁、"進入數據分析儀表板"頁
+4 - 第四級權限，可進入"進入數據分析儀表板"頁
+
+register要調整
+
+
+register.html頁面提交submit後，請實現views.py中register以下實現
+1. 連結資料庫
+2. 將username、password、realname、phone、email、department、title、company、is_active、is_superuser寫入至db中users表單
+3. 將permission_type寫入至db中permissions表單中
+4. 彈出式視窗顯示寫入成功與否，以及寫入資訊
+5. 關閉資料庫、cursor
+6. 請勿更動其他功能
+
+
+
+test2
+ttt222
+
+lowuser
+aaa222
+
+測試註冊
+
+
+1. 服務區 : str
+2. 背景音樂 : m4a一首
+3. 背景 : jpg一張
+4. 字體 : 一式
+5. 往生者姓名
+6. 個人照 : jpg、png一張
+7. 出生年月
+8. 辭世年月
+9. 告別式說說明 : str，未限制字數
+10. 儀式流程 : 時間加上說明，儀式已斷落的方式可以新增
+11. 訃聞正面照 : jpg、png一張
+12. 訃聞反面照 : jpg、png一張
+13. 告別式位置資訊 : 名稱、地址、廳別、交通資訊說明(未限制字數)
+14. 靈堂資訊 : 名稱、地址、廳別、交通資訊說明(未限制字數
+15. 致贈花禮說明 : str，未限制字數
+16. 花禮 : 可一直新增欄位，jpg、png一張，花禮名稱、花禮價格、是否可訂購
+17. 回憶錄 : youtube網址
+18. 生活照 : jpg、png未限制張數
+19. 承辦人員姓名 : str
+20. 承辦人員電話
+
+
+雲端訃聞
+1. 文字、日期、授權格式 : 儲存於Mysql
+2. 浮動圖片 : 儲存於雲端硬碟
+3. 音樂、背景 : 儲存於應用程式中
+
+obituary_base.html
+列表中要添加
+1. 哪個公司製作的
+2. 製作時間
+3. 硬碟使用大小
+4. 加入刪除案件
+

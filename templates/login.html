@@ -17,6 +17,14 @@
             width: 100%;
             padding: 15px;
         }
+
+        .form-label {
+            font-size : 1.5rem
+        }
+
+        .form-control {
+            font-size : 1.5rem
+        }
         
         .card {
             border-radius: 15px;
@@ -32,7 +40,7 @@
         
         .system-title {
             color: #333;
-            font-size: 1.5rem;
+            font-size: 2rem;
             margin-bottom: 0;
             font-weight: 600;
         }
@@ -92,12 +100,12 @@
                         <form method="post" action="{% url 'login' %}">
                             {% csrf_token %}
                             <div class="mb-4">
-                                <label for="username" class="form-label">請輸入帳號</label>
+                                <label for="username" class="form-label">請輸入職員帳號</label>
                                 <input type="text" class="form-control" id="username" name="username" 
                                        required placeholder="請輸入您的帳號">
                             </div>
                             <div class="mb-4">
-                                <label for="password" class="form-label">請輸入密碼</label>
+                                <label for="password" class="form-label">請輸入登入密碼</label>
                                 <input type="password" class="form-control" id="password" name="password" 
                                        required placeholder="請輸入您的密碼">
                             </div>

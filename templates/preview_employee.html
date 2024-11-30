@@ -1,0 +1,172 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職員列表 - 楊子佛教禮儀雲端訃聞系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #385A52;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 50px;
+            margin-bottom: 50px;
+            max-width: 90% !important;
+        }
+        
+        .table {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .table th {
+            background-color: #385A52;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 1.1em;
+        }
+        
+        .table td {
+            text-align: center;
+            vertical-align: middle;
+            font-size: 1.2em;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .title {
+            color: #385A52;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加右上角回首页按钮 -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <a href="{% url 'home' %}" class="btn btn-secondary">回首頁</a>
+    </div>
+
+    <div class="container">
+        <h2 class="title">職員列表</h2>
+        
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>DB ID</th>
+                        <th>用戶名</th>
+                        <th>姓名</th>
+                        <th>電話</th>
+                        <th>電子郵件</th>
+                        <th>部門</th>
+                        <th>職稱</th>
+                        <th>公司</th>
+                        <th>權限等級</th>
+                        <th>是否啟動</th>
+                        <th>開發人員</th>
+                        <th>創建時間</th>
+                        <th>更新時間</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ emp.user_id }}</td>
+                        <td>{{ emp.username }}</td>
+                        <td>{{ emp.realname }}</td>
+                        <td>{{ emp.phone }}</td>
+                        <td>{{ emp.email }}</td>
+                        <td>{{ emp.department }}</td>
+                        <td>{{ emp.title }}</td>
+                        <td>
+                            {% if emp.company == 'taichung' %}
+                                台中楊子
+                            {% elif emp.company == 'taipei' %}
+                                台北楊子
+                            {% elif emp.company == 'kaohsiung' %}
+                                高雄楊子
+                            {% else %}
+                                {{ emp.company }}
+                            {% endif %}
+                        </td>
+                        <td>{{ emp.permission_type }}</td>
+                        <td>{% if emp.is_active %}是{% else %}否{% endif %}</td>
+                        <td>{% if emp.is_superuser %}是{% else %}否{% endif %}</td>
+                        <td>{{ emp.created_at }}</td>
+                        <td>{{ emp.updated_at }}</td>
+                        <td>
+                            <!-- 操作按钮 -->
+                            <div class="btn-group" role="group" style="gap: 10px;">
+                                <!-- 修改按钮 -->
+                                <button type="button" class="btn btn-warning btn-sm" 
+                                        style="padding: 5px 10px; margin-right: 5px;" 
+                                        onclick="alert('功能開發中')">
+                                    修改
+                                </button>
+                                
+                                <!-- 變更啟動狀態 -->
+                                {% if emp.permission_type != '0' %}
+                                <form method="post" action="{% url 'toggle_active' emp.user_id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-info btn-sm" 
+                                            style="padding: 5px 10px; margin-right: 5px;">
+                                        {% if emp.is_active %}停用{% else %}啟用{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+                                
+                                <!-- 删除按钮 - 只对非管理员显示 -->
+                                {% if emp.permission_type != '0' %}
+                                <form method="post" action="{% url 'delete_employee' emp.user_id %}" 
+                                      style="display: inline;"
+                                      onsubmit="return confirm('確定要刪除此用戶嗎？此操作無法撤銷。');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" 
+                                            style="padding: 5px 10px;">
+                                        刪除
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
