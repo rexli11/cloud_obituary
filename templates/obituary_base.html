@@ -1,10 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>楊子佛教禮儀雲端訃聞系統</title>
-    {% comment %} <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon"> {% endcomment %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -53,7 +53,7 @@
         }
 
         .list-group-item-action {
-            font-size: 1.2em;
+            font-size: 1.8em;
         }
         
         .list-title {
@@ -69,6 +69,21 @@
                 margin-top: 10px;
                 transform: none;
             }
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            padding: 5px 15px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
         }
     </style>
 </head>
@@ -87,14 +102,68 @@
         <!-- 訃聞列表 -->
         <div class="obituary-list">
             <h3 class="text-center list-title">已製作之雲端訃聞列表</h3>
-            {% comment %} <p class="text-center text-muted">sample</p> {% endcomment %}
             <div class="list-group">
-                <a href="#" class="list-group-item list-group-item-action">
-                    2024/01/05 案件名稱：xxx，訃聞連結：Http://...
-                </a>
+                {% for obituary in obituaries %}
+                <div class="list-group-item">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <!-- 服務處標籤 -->
+                            <span class="badge bg-secondary me-3">
+                                {% if obituary.service_area == '1' %}
+                                    北部服務處
+                                {% elif obituary.service_area == '2' %}
+                                    中部服務處
+                                {% elif obituary.service_area == '3' %}
+                                    南部服務處
+                                {% endif %}
+                            </span>
+                            
+                            <!-- 訃聞連結 -->
+                            <a href="{{ obituary.file_path }}" class="text-decoration-none" target="_blank">
+                                {{ obituary.created_at|date:"Y/m/d" }} 案件名稱：{{ obituary.deceased_name }}
+                            </a>
+                        </div>
+                        
+                        <!-- 刪除按鈕 -->
+                        <button type="button" 
+                                class="btn btn-danger" 
+                                onclick="confirmDelete({{ obituary.id }}, '{{ obituary.deceased_name }}')">
+                                刪除
+                            </button>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
+
+    <!-- 添加 JavaScript -->
+    <script>
+        function confirmDelete(id, name) {
+            if (confirm(`確定要刪除 ${name} 的訃聞嗎？此操作無法撤銷。`)) {
+                // 發送刪除請求
+                fetch(`/obituary/delete/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('刪除成功！');
+                        location.reload(); // 重新載入頁面
+                    } else {
+                        alert('刪除失敗：' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('刪除失敗，請稍後再試');
+                });
+            }
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

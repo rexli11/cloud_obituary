@@ -1,60 +1,55 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>訃聞預覽</title>
-    {% comment %} <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon"> {% endcomment %}
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         @font-face {
             font-family: '標楷體';
-            src: url('{% static "fonts/kaiti.ttf" %}') format('truetype');
+            src: url('/static/fonts/kaiti.ttf') format('truetype');
         }
-        
+
         @font-face {
             font-family: '華康仿宋體';
-            src: url('{% static "fonts/fangsong.ttf" %}') format('truetype');
+            src: url('/static/fonts/fangsong.ttf') format('truetype');
         }
 
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            {% comment %} background-color: #1668dc; {% endcomment %}
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體', 'KaiTi', '楷體-繁'{% else %}'華康仿宋體', 'FangSong', '仿宋-繁'{% endif %}, sans-serif;
+
+            font-family: '華康仿宋體', 'FangSong', '仿宋-繁', sans-serif;
         }
-        
-        {% comment %} .golden-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            background-color: #D4AF37;  /* 金色 */
-            z-index: 2;
-        } {% endcomment %}
-        
+
+
+
         .preview-container {
             width: 100%;
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
         }
-        
+
         .background-image {
             position: fixed;
             top: 0;
             left: 50%;
-            transform: translate(-50%, 0);  /* 水平置中 */
+            transform: translate(-50%, 0);
+            /* 水平置中 */
             height: 100vh;
-            width: auto;  /* 自動寬度 */
-            min-width: 100vw;  /* 最小寬度為視窗寬度 */
+            width: auto;
+            /* 自動寬度 */
+            min-width: 100vw;
+            /* 最小寬度為視窗寬度 */
             object-fit: cover;
             z-index: 0;
         }
-        
+
         .content-wrapper {
             position: relative;
             z-index: 1;
@@ -63,22 +58,22 @@
             max-width: 1200px;
             background-color: transparent;
         }
-        
+
         .preview-content {
             width: 100%;
             max-width: 1000px;
             text-align: center;
             margin: 0 auto;
         }
-        
+
         .deceased-name {
             font-size: 36px;
             font-weight: bold;
             margin-bottom: 30px;
             color: #000;
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+            font-family: '華康仿宋體';
         }
-        
+
         .photo-container {
             width: 33.33vw;
             height: 44.44vw;
@@ -86,14 +81,15 @@
             background-color: transparent;
             position: relative;
             overflow: hidden;
-            border-radius: 10px; /* 相片圓角 */
+            border-radius: 10px;
+            /* 相片圓角 */
         }
-        
+
         .photo-label {
             font-size: 18px;
             margin-bottom: 10px;
         }
-        
+
         .deceased-photo {
             position: absolute;
             top: 0;
@@ -108,26 +104,27 @@
                 width: 80vw;
                 height: 106.67vw;
             }
-            
+
             .content-wrapper {
                 padding: 20px 10px;
             }
         }
-        
+
         .dates-container {
             margin: 20px 0;
             display: flex;
             justify-content: center;
-            gap: 50px; /* 生卒年之間的間距 */
+            gap: 50px;
+            /* 生卒年之間的間距 */
         }
-        
+
         .date-item {
             font-size: 24px;
             font-weight: bold;
             color: #000;
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+            font-family: '華康仿宋體';
         }
-        
+
         .ceremony-container {
             width: 80%;
             margin: 30px auto;
@@ -136,25 +133,26 @@
             color: #000;
             font-size: 20px;
             text-align: left;
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+            font-family: '華康仿宋體';
         }
-        
+
         .ceremony-process-container {
-            {% comment %} background-color: rgba(255, 255, 255, 0.9); {% endcomment %}
+
             background-color: #fff;
             border-radius: 15px;
             padding: 30px;
             margin: 20px auto;
             max-width: 1200px;
-            opacity: 0.9; /* 整个容器的透明度为90% */
+            opacity: 0.9;
+            /* 整个容器的透明度为90% */
         }
-        
+
         .ceremony-process-content {
             display: flex;
             flex-direction: column;
             padding: 10px;
         }
-        
+
         .ceremony-title {
             color: #000;
             padding: 10px 20px;
@@ -162,25 +160,25 @@
             margin-bottom: 10px;
             display: inline-block;
         }
-        
+
         .ceremony-divider {
             height: 2px;
             background-color: #4a76cf;
             margin: 10px 0 20px 0;
             width: 100%;
         }
-        
+
         .ceremony-content-wrapper {
             display: flex;
             justify-content: space-between;
             gap: 20px;
         }
-        
+
         .ceremony-left-section,
         .ceremony-right-section {
             width: 40%;
         }
-        
+
         @media (max-width: 768px) {
             .ceremony-content-wrapper {
                 flex-direction: column;
@@ -191,7 +189,7 @@
                 width: 100%;
             }
         }
-        
+
         .obituary-preview {
             width: 364px;
             height: 245px;
@@ -201,19 +199,19 @@
             margin-bottom: 5px;
             cursor: pointer;
         }
-        
+
         .obituary-preview img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
-        
+
         .obituary-thumbnails {
             display: flex;
             gap: 10px;
             justify-content: center;
         }
-        
+
         .obituary-thumbnail {
             width: 100px;
             height: 100px;
@@ -222,39 +220,45 @@
             overflow: hidden;
             border: 2px solid transparent;
         }
-        
+
         .obituary-thumbnail.active {
             border-color: #4a76cf;
         }
-        
+
         .obituary-thumbnail img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        
+
         /* 全螢幕預覽樣式 */
         .fullscreen-preview {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;  /* 使用视窗宽度 */
-            height: 100vh; /* 使用视窗高度 */
+            width: 100vw;
+            /* 使用视窗宽度 */
+            height: 100vh;
+            /* 使用视窗高度 */
             background-color: rgba(0, 0, 0, 0.95);
-            z-index: 999999;  /* 提高层级 */
+            z-index: 999999;
+            /* 提高层级 */
             justify-content: center;
             align-items: center;
         }
 
         .fullscreen-preview img {
-            max-width: 90vw;  /* 使用视窗宽度 */
-            max-height: 90vh; /* 使用视窗高度 */
+            max-width: 90vw;
+            /* 使用视窗宽度 */
+            max-height: 90vh;
+            /* 使用视窗高度 */
             object-fit: contain;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             position: relative;
-            z-index: 1000000;  /* 提高层级 */
+            z-index: 1000000;
+            /* 提高层级 */
         }
 
         .close-preview {
@@ -269,10 +273,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: rgba(255,255,255,0.2);
+            background-color: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             transition: background-color 0.3s;
-            z-index: 1000001;  /* 提高层级 */
+            z-index: 1000001;
+            /* 提高层级 */
         }
 
         .google-map-container {
@@ -282,7 +287,7 @@
             border-radius: 10px;
             overflow: hidden;
         }
-        
+
         .ceremony-process-title {
             font-size: 24px;
             margin-bottom: 20px;
@@ -292,23 +297,23 @@
             text-align: center;
             border-radius: 10px;
         }
-        
+
         .ceremony-left-section {
             width: 70%;
             padding-right: 10px;
         }
-        
+
         .ceremony-columns {
             display: flex;
             gap: 20px;
         }
-        
+
         .obituary-images {
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
-        
+
         .obituary-image {
             width: 100%;
             height: auto;
@@ -316,28 +321,28 @@
             object-fit: contain;
             border-radius: 8px;
         }
-        
+
         .ceremony-item {
             padding: 10px;
             border-bottom: 1px solid #eee;
         }
-        
+
         .ceremony-item .time {
             color: #4a76cf;
             margin-bottom: 5px;
         }
-        
+
         .ceremony-item .content {
             color: #333;
         }
-        
+
         .obituary-preview {
             background-color: transparent;
             padding: 1px;
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        
+
         .obituary-preview img {
             max-width: 100%;
             height: auto;
@@ -382,7 +387,7 @@
             margin: 0;
         }
 
-        {% comment %} 儀式流程交互顏色調整 {% endcomment %}
+
         .ceremony-list li {
             display: flex;
             align-items: center;
@@ -396,10 +401,8 @@
         .ceremony-list li:nth-child(odd) {
             background-color: #fff;
         }
-        
-        {% comment %} .ceremony-list li:hover {
-            background-color: #e2e6ea;
-        } {% endcomment %}
+
+
 
         .ceremony-list li span {
             width: 80px;
@@ -477,7 +480,7 @@
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* 全螢幕預覽樣式優化 */
@@ -499,7 +502,7 @@
             max-height: 90vh;
             object-fit: contain;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .close-preview {
@@ -514,13 +517,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: rgba(255,255,255,0.2);
+            background-color: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             transition: background-color 0.3s;
         }
 
         .close-preview:hover {
-            background-color: rgba(255,255,255,0.3);
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         /* 位置資訊樣式 */
@@ -711,7 +714,7 @@
                 width: 100%;
                 height: 245px;
             }
-            
+
             .ceremony-right-section,
             .map-section {
                 width: 100%;
@@ -758,7 +761,7 @@
             border-radius: 50%;
             border: none;
             background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -791,7 +794,7 @@
         .top-btn {
             background-color: #fff;
             color: #4a76cf;
-            {% comment %} display: none; /* 初始隱藏 */ {% endcomment %}
+
         }
 
         .flower-gift-description {
@@ -805,7 +808,7 @@
             background-color: #f8f9fa;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .gift-image {
@@ -847,7 +850,8 @@
 
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 比例 */
+            padding-bottom: 56.25%;
+            /* 16:9 比例 */
             height: 0;
             overflow: hidden;
             border-radius: 8px;
@@ -937,7 +941,8 @@
 
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 比例 */
+            padding-bottom: 56.25%;
+            /* 16:9 比例 */
             height: 0;
             overflow: hidden;
             border-radius: 8px;
@@ -1025,19 +1030,22 @@
             }
         }
 
-        .flower-gift-item, .life-photo-item {
+        .flower-gift-item,
+        .life-photo-item {
             cursor: pointer;
             transition: transform 0.3s;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .flower-gift-item:hover, .life-photo-item:hover {
+        .flower-gift-item:hover,
+        .life-photo-item:hover {
             transform: scale(1.05);
         }
 
-        .gift-image, .life-photo-image {
+        .gift-image,
+        .life-photo-image {
             width: 100%;
             height: 200px;
             object-fit: cover;
@@ -1075,13 +1083,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: rgba(255,255,255,0.2);
+            background-color: rgba(255, 255, 255, 0.2);
             border-radius: 50%;
             transition: background-color 0.3s;
         }
 
         .close-preview:hover {
-            background-color: rgba(255,255,255,0.3);
+            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .ceremony-list {
@@ -1092,16 +1100,20 @@
 
         .ceremony-item {
             display: flex;
-            align-items: flex-start;  /* 改為頂部對齊 */
-            gap: 15px;  /* 時間和內容之間的間距 */
+            align-items: flex-start;
+            /* 改為頂部對齊 */
+            gap: 15px;
+            /* 時間和內容之間的間距 */
             margin-bottom: 15px;
             background-color: transparent;
         }
 
         /* 時間方塊樣式 */
         .time-block {
-            min-width: 150px;  /* 固定寬度 */
-            padding: 8px 12px;  /* 上下8px, 左右12px的內邊距 */
+            min-width: 150px;
+            /* 固定寬度 */
+            padding: 8px 12px;
+            /* 上下8px, 左右12px的內邊距 */
             min-height: 43px;
             background-color: #385A52;
             color: white;
@@ -1112,15 +1124,14 @@
             line-height: 1.5;
         }
 
-        {% comment %} .time-block:nth-child(odd) {
-            background-color: #B9AD9A;
-        } {% endcomment %}
+
 
         /* 內容方塊樣式 */
         .content-block {
             flex: 1;
             margin: 0;
-            padding: 8px 15px;  /* 上下8px, 左右15px的內邊距 */
+            padding: 8px 15px;
+            /* 上下8px, 左右15px的內邊距 */
             background-color: #b39a78;
             border-radius: 5px;
             color: white;
@@ -1159,7 +1170,8 @@
         }
 
         .item {
-            width: 500px;  /* 固定寬度 */
+            width: 500px;
+            /* 固定寬度 */
             padding: 20px;
             margin: 10px 10px;
             display: flex;
@@ -1169,7 +1181,8 @@
         }
 
         .logo {
-            flex: 0 0 auto;  /* 防止 logo 被壓縮 */
+            flex: 0 0 auto;
+            /* 防止 logo 被壓縮 */
             margin-right: 20px;
         }
 
@@ -1182,7 +1195,8 @@
         }
 
         .info {
-            flex: 1;  /* 讓資訊區域填滿剩餘空間 */
+            flex: 1;
+            /* 讓資訊區域填滿剩餘空間 */
         }
 
         .info h3 {
@@ -1227,8 +1241,10 @@
             font-size: 16px;
             position: relative;
             z-index: 2;
-            width: 100%;  /* 確保寬度 100% */
-            bottom: 0;    /* 確保在底部 */
+            width: 100%;
+            /* 確保寬度 100% */
+            bottom: 0;
+            /* 確保在底部 */
         }
 
         .footer-bottom-conpany-info a {
@@ -1244,17 +1260,22 @@
             font-size: 16px;
             position: relative;
             z-index: 2;
-            width: 100%;  /* 確保寬度 100% */
-            bottom: 0;    /* 確保在底部 */
+            width: 100%;
+            /* 確保寬度 100% */
+            bottom: 0;
+            /* 確保在底部 */
         }
 
         .bottom-title {
-            margin: 0 0 5px;  /* 上下間距 */
+            margin: 0 0 5px;
+            /* 上下間距 */
             text-align: center;
             position: relative;
             z-index: 2;
-            background-color: transparent;  /* 確保景為透明 */
-            padding: 10px 0;  /* 上下內邊距 */
+            background-color: transparent;
+            /* 確保景為透明 */
+            padding: 10px 0;
+            /* 上下內邊距 */
         }
 
         .bottom-title .container {
@@ -1267,24 +1288,30 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;  /* 元素之間的間距 */
+            gap: 10px;
+            /* 元素之間的間距 */
             margin-bottom: 5px;
         }
 
         .bottom-title .line {
-            width: 150px;  /* 裝飾線的寬度 */
-            height: 7px;   /* 裝飾線的高度 */
+            width: 150px;
+            /* 裝飾線的寬度 */
+            height: 7px;
+            /* 裝飾線的高度 */
             object-fit: contain;
         }
 
         .bottom-title .title-icon {
-            width: 60px;   /* logo 的寬度 */
-            height: 40px;  /* logo 的高度 */
+            width: 60px;
+            /* logo 的寬度 */
+            height: 40px;
+            /* logo 的高度 */
             object-fit: contain;
         }
 
         .bottom-title h1 {
-            color: #385A52;  /* 文字顏色 */
+            color: #385A52;
+            /* 文字顏色 */
             font-size: 30px;
             font-weight: bold;
             margin: 0;
@@ -1294,16 +1321,20 @@
 
         @media (max-width: 768px) {
             .bottom-title .line {
-                width: 100px;  /* 移動端裝飾線寬度 */
+                width: 100px;
+                /* 移動端裝飾線寬度 */
             }
 
             .bottom-title .title-icon {
-                width: 160px;   /* 移動端 logo 寬度 */
-                height: 120px;  /* 移動端 logo 高度 */
+                width: 160px;
+                /* 移動端 logo 寬度 */
+                height: 120px;
+                /* 移動端 logo 高度 */
             }
 
             .bottom-title h1 {
-                font-size: 24px;  /* 移動端文字大小 */
+                font-size: 24px;
+                /* 移動端文字大小 */
             }
         }
 
@@ -1337,12 +1368,13 @@
             background-color: #385A52;
             border-radius: 10%;
             display: flex;
-            flex-direction: column;  /* 改為垂直排列 */
+            flex-direction: column;
+            /* 改為垂直排列 */
             justify-content: center;
             align-items: center;
             cursor: pointer;
             z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             color: white;
             border: none;
             transition: transform 0.3s ease;
@@ -1351,10 +1383,12 @@
 
         .shopping-cart-btn i {
             font-size: 24px;
-            margin-bottom: 8px;  /* 增加圖標與文字的間距 */
+            margin-bottom: 8px;
+            /* 增加圖標與文字的間距 */
         }
 
-        .shopping-cart-btn span:not(.cart-count) {  /* 不影響數量顯示 */
+        .shopping-cart-btn span:not(.cart-count) {
+            /* 不影響數量顯示 */
             font-size: 14px;
             text-align: center;
             line-height: 1.2;
@@ -1363,7 +1397,8 @@
 
         .cart-count {
             position: absolute;
-            top: 10px;  /* 調整位置 */
+            top: 10px;
+            /* 調整位置 */
             right: 10px;
             background-color: #dc3545;
             color: white;
@@ -1377,19 +1412,23 @@
         }
 
         .shopping-cart-btn:hover {
-            transform: translateY(-50%) scale(1.1);  /* 保持垂直位置並放大 */
+            transform: translateY(-50%) scale(1.1);
+            /* 保持垂直位置並放大 */
         }
 
         /* 分享按鈕容器 */
         .share-links {
             position: fixed;
-            right: 33px; /* 位置居中 */
-            bottom: 290px; /* 調整位置到分享按鈕上方 */
+            right: 33px;
+            /* 位置居中 */
+            bottom: 290px;
+            /* 調整位置到分享按鈕上方 */
             display: none;
             flex-direction: column;
             gap: 5px;
             z-index: 999;
-            align-items: center; /* 確保圖標水平居中 */
+            align-items: center;
+            /* 確保圖標水平居中 */
         }
 
         /* 分享圖標樣式 */
@@ -1401,7 +1440,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: transform 0.3s ease;
         }
 
@@ -1423,8 +1462,10 @@
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(20px); /* 從下往上滑入 */
+                transform: translateY(20px);
+                /* 從下往上滑入 */
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -1432,120 +1473,138 @@
         }
     </style>
 </head>
+
 <body>
     <div class="preview-container">
-        {% comment %} <div class="golden-bar"></div> {% endcomment %}
-        {% if data.desktop_background %}
-            <img 
-                class="background-image" 
-                src="{% static 'cloud_obituary/desktop/' %}{{ data.desktop_background }}.jpg" 
-                alt="背景"
-                onload="this.classList.add('loaded')"
-            >
-        {% endif %}
+
+
+        <img class="background-image" src="/static/cloud_obituary/desktop/2.jpg" alt="背景"
+            onload="this.classList.add('loaded')">
+
         <div class="content-wrapper">
             <div class="preview-content">
                 <div class="title bottom-title">
                     <div class="container">
                         <div class="top uk-flex uk-flex-center">
-                            <img src="{% static 'images/title-left.svg' %}" alt="" class="line">
-                            <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
-                                 style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                            <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
+                            <img src="/static/images/title-left.svg" alt="" class="line">
+                            <img class="title-icon" src="/static/images/title-icon.png" alt=""
+                                style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
+                            <img src="/static/images/title-right.svg" alt="" class="line">
                         </div>
                     </div>
                 </div>
 
-                <div class="deceased-name">{{ data.deceased_name }}</div>
+                <div class="deceased-name">某某某　居士</div>
                 <div class="photo-container">
-                    {% if data.deceased_photo %}
-                        <img 
-                            class="deceased-photo" 
-                            src="{{ data.deceased_photo }}" 
-                            alt="個人照片" 
-                            onerror="console.error('照片加載失敗'); this.style.display='none';"
-                            onload="console.log('照片加載成功');"
-                        >
-                    {% endif %}
+
+                    <!-- <img class="deceased-photo" src="https://drive.google.com/uc?id=113lUqKqANPFhHgJ_5JB5-rArMiLOtQBS"
+                        alt="個人照片" onerror="console.error('照片加載失敗'); this.style.display='none';"
+                        onload="console.log('照片加載成功');"> -->
+
+                    <iframe class="deceased-photo"
+                        src="https://drive.google.com/file/d/113lUqKqANPFhHgJ_5JB5-rArMiLOtQBS/view?usp=drivesdk"
+                        width="600" height="400" alt="個人照片"
+                        onerror="console.error('照片加載失敗'); this.style.display='none';"
+                        onload="console.log('照片加載成功');"></iframe>
+
                 </div>
 
                 <!-- 生卒年容器 -->
-                <div class="dates-container" style="margin-top: {% if not data.birth_date and not data.death_date %}0{% else %}20px{% endif %};">
-                    {% if not data.hide_birth_date and data.birth_date %}
-                        <div class="date-item">
-                            生於 {{ data.birth_date }}
-                        </div>
-                    {% endif %}
-                    
-                    {% if not data.hide_death_date and data.death_date %}
-                        <div class="date-item">
-                            辭世 {{ data.death_date }}
-                        </div>
-                    {% endif %}
+                <div class="dates-container" style="margin-top: 0;">
+
+
+
                 </div>
                 <div class="ceremony-divider"></div>
 
                 <!-- 告別式說明容器 -->
-                {% if data.ceremony_details %}
-                    <div class="ceremony-container">
-                        {{ data.ceremony_details|linebreaks }}
-                    </div>
-                {% endif %}
+
+                <div class="ceremony-container">
+                    <p>我們摯愛的父親某某某居士<br>已於一一三年五月五日在家人的陪伴下圓滿此生旅程。</p>
+
+                    <p>聖嚴法師曾說：人生的終點不是生命的結束，乃是無限的延伸及圓滿的連續。<br>父親這一生德厚清淨，用無私的愛燃點生命光輝，有如明燈般引領我們、庇護我們。<br>現在，他雖已走完人生旅程，但我們相信，他此生匯聚的慈悲、智慧，以及那涓滴播灑的福德，將帶領他前往佛國淨土，在極樂世界裡蓮華化生。
+                    </p>
+
+                    <p>在父親即將遠行的時刻，我們希望有機會代表他向您致意，感恩您在他人生中給予支持、鼓勵、陪伴而結下的善緣，衷心企盼您能前來祝福他，參加這一場莊嚴的佛事，一起陪伴他聽聞佛法開示，並用聖號音聲為他送行。<br>
+                    </p>
+                </div>
+
 
                 <!-- 儀式流程容器 -->
-                {% if data.ceremony_items %}
+
                 <div class="ceremony-process-container">
                     <div class="ceremony-process-content">
                         <div class="head">
                             <h2>告別式流程</h2>
                             <div class="ceremony-divider"></div>
                         </div>
-                        
+
                         <div class="ceremony-content-wrapper">
                             <!-- 左側儀式流程 -->
                             <div class="ceremony-left-section">
                                 <div class="ceremony-list">
-                                    {% for item in data.ceremony_items %}
+
                                     <div class="ceremony-item">
-                                        <div class="time-block">{{ item.time }}</div>
-                                        <div class="content-block">{{ item.content }}</div>
+                                        <div class="time-block">17:36</div>
+                                        <div class="content-block">追思祝福暨公奠禮</div>
                                     </div>
-                                    {% endfor %}
+
+                                    <div class="ceremony-item">
+                                        <div class="time-block"></div>
+                                        <div class="content-block">追思祝福暨公奠禮</div>
+                                    </div>
+
+                                    <div class="ceremony-item">
+                                        <div class="time-block"></div>
+                                        <div class="content-block">追思祝福暨公奠禮</div>
+                                    </div>
+
+                                    <div class="ceremony-item">
+                                        <div class="time-block"></div>
+                                        <div class="content-block">追思祝福暨公奠禮</div>
+                                    </div>
+
                                 </div>
                             </div>
-                            
+
                             <!-- 右側訃聞預覽 -->
                             <div class="ceremony-right-section">
-                                {% if data.obituary_front or data.obituary_back %}
+
                                 <div class="obituary-preview-container">
                                     <div class="obituary-preview-main">
-                                        {% if data.obituary_front %}
-                                        <div class="obituary-preview" onclick="showFullscreen('{{ data.obituary_front }}')">
-                                            <img src="{{ data.obituary_front }}" alt="訃聞正面">
+
+                                        <div class="obituary-preview"
+                                            onclick="showFullscreen('https://drive.google.com/file/d/1-BhTK8c2ttzEwtCdF_2FNatFvlUhPivn/view?usp=drivesdk')">
+                                            <img src="https://drive.google.com/file/d/1-BhTK8c2ttzEwtCdF_2FNatFvlUhPivn/view?usp=drivesdk"
+                                                alt="訃聞正面">
                                         </div>
-                                        {% endif %}
+
                                     </div>
-                                    
+
                                     <div class="obituary-thumbnails">
-                                        {% if data.obituary_front %}
-                                        <div class="obituary-thumbnail active" onclick="switchPreview(this, '{{ data.obituary_front }}')">
-                                            <img src="{{ data.obituary_front }}" alt="訃聞正面縮圖">
+
+                                        <div class="obituary-thumbnail active"
+                                            onclick="switchPreview(this, 'https://drive.google.com/file/d/1-BhTK8c2ttzEwtCdF_2FNatFvlUhPivn/view?usp=drivesdk')">
+                                            <img src="https://drive.google.com/file/d/1-BhTK8c2ttzEwtCdF_2FNatFvlUhPivn/view?usp=drivesdk"
+                                                alt="訃聞正面縮圖">
                                         </div>
-                                        {% endif %}
-                                        
-                                        {% if data.obituary_back %}
-                                        <div class="obituary-thumbnail" onclick="switchPreview(this, '{{ data.obituary_back }}')">
-                                            <img src="{{ data.obituary_back }}" alt="訃聞背面縮圖">
+
+
+
+                                        <div class="obituary-thumbnail"
+                                            onclick="switchPreview(this, 'https://drive.google.com/file/d/15yz_kEDHht3_WdLS_IRaRlwnD1hmMabP/view?usp=drivesdk')">
+                                            <img src="https://drive.google.com/file/d/15yz_kEDHht3_WdLS_IRaRlwnD1hmMabP/view?usp=drivesdk"
+                                                alt="訃聞背面縮圖">
                                         </div>
-                                        {% endif %}
+
                                     </div>
                                 </div>
-                                {% endif %}
+
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endif %}
+
 
                 <!-- 位置資訊容器 -->
                 <div class="ceremony-process-container location-container">
@@ -1558,7 +1617,7 @@
                             </ul>
                             <div class="ceremony-divider"></div>
                         </div>
-                        
+
                         <div class="location-content">
                             <div class="info">
                                 <!-- 告別式會場資訊 -->
@@ -1566,22 +1625,22 @@
                                     <ul class="info-list">
                                         <li>
                                             <span>會場名稱：</span>
-                                            <p>{{ data.location_name }}</p>
+                                            <p>臺中市生命禮儀管理處（東海館）</p>
                                         </li>
                                         <li>
                                             <span>會場地址：</span>
-                                            <p>{{ data.location_address }}</p>
+                                            <p>臺中市生命禮儀管理處（東海館）</p>
                                         </li>
-                                        {% if data.location_area %}
+
                                         <li>
                                             <span>廳別資訊：</span>
-                                            <p>{{ data.location_area }}</p>
+                                            <p>臺中市生命禮儀管理處（東海館）</p>
                                         </li>
                                         <li>
                                             <span>交通資訊：</span>
                                         </li>
-                                        {% endif %}
-                                        {% if data.traffic_info %}
+
+
                                         <li>
                                             <div class="traffic-info-container">
                                                 <div class="traffic-header" onclick="toggleTraffic(this)">
@@ -1589,56 +1648,64 @@
                                                 </div>
                                                 <div class="traffic-content collapsed">
                                                     <div class="traffic-sections">
-                                                        {{ data.traffic_info|linebreaks }}
+                                                        <p>交通資訊：<br>【公車】<br>※　至【臺中榮總】站下車，走東大路即可抵達。<br>●　台中客運：69、304、307、324<br>●　統聯客運：63、67、75、300、301、303<br>●　巨業交通：306
+                                                        </p>
+
+                                                        <p>【自行前往】<br>北上：<br>●　國道　1　號高速公路　→　下「178台中交流道」往「沙鹿」方向　→　續走「臺灣大道四段」→　右轉「東大路一段」（請提前路口切換至外側車道）　→　左轉「福順路」→　東海殯儀館。<br>●　國道　3　號高速公路　→　下「182龍井交流道」往「台中」方向　→　續走「向上路六段」→　左轉「中興路」→　右轉「臺灣大道五段」→　左轉「東大路一段」→　左轉「福順路」→　東海殯儀館。<br>南下：<br>●　國道　1　號高速公路　→　下「178台中交流道」往「沙鹿」方向　→　續走「臺灣大道四段」→　右轉「東大路一段」（請提前路口切換至外側車道）　→　左轉「福順路」→　東海殯儀館。<br>●　國道　3　號高速公路　→　下「182龍井交流道」往「台中」方向　→　續走「向上路六段」→　左轉「中興路」→　右轉「臺灣大道五段」→　左轉「東大路一段」→　左轉「福順路」→　東海殯儀館。<br>
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </li>
-                                        {% endif %}
+
                                     </ul>
                                 </div>
-                                
+
                                 <!-- 添加靈堂資訊 -->
                                 <div class="loca-info" id="tomb-info" style="display: none;">
-                                    {% comment %} <p class="venue-name">{{ data.tomb_location_name }}</p> {% endcomment %}
-                                    {% comment %} <div class="ceremony-divider"></div> {% endcomment %}
+
+
                                     <ul class="info-list">
                                         <li>
                                             <span>靈堂名稱：</span>
-                                            <p>{{ data.tomb_location_name }}</p>
+                                            <p>【臺中榮總】站下車，走東大路即可抵達。</p>
                                         </li>
                                         <li>
                                             <span>靈堂地址：</span>
-                                            <p>{{ data.tomb_location_address }}</p>
+                                            <p>【臺中榮總】站下車，走東大路即可抵達。</p>
                                         </li>
-                                        {% if data.tomb_location_area %}
+
                                         <li>
                                             <span>靈堂廳別：</span>
-                                            <p>{{ data.tomb_location_area }}</p>
+                                            <p>【臺中榮總】站下車，走東大路即可抵達。</p>
                                         </li>
                                         <li>
                                             <span>交通訊：</span>
                                         </li>
-                                        {% endif %}
-                                        {% if data.tomb_traffic_info %}
+
+
                                         <li>
-                                            {% comment %} <span>交通資訊：</span> {% endcomment %}
+
                                             <div class="traffic-info-container">
                                                 <div class="traffic-header" onclick="toggleTraffic(this)">
                                                     <div class="toggle-icon">詳細資訊</div>
                                                 </div>
                                                 <div class="traffic-content collapsed">
                                                     <div class="traffic-sections">
-                                                        {{ data.tomb_traffic_info|linebreaks }}
+                                                        <p>交通資訊：<br>【公車】<br>※　至【臺中榮總】站下車，走東大路即可抵達。<br>●　台中客運：69、304、307、324<br>●　統聯客運：63、67、75、300、301、303<br>●　巨業交通：306
+                                                        </p>
+
+                                                        <p>【自行前往】<br>北上：<br>●　國道　1　號高速公路　→　下「178台中交流道」往「沙鹿」方向　→　續走「臺灣大道四段」→　右轉「東大路一段」（請提前路口切換至外側車道）　→　左轉「福順路」→　東海殯儀館。<br>●　國道　3　號高速公路　→　下「182龍井交流道」往「台中」方向　→　續走「向上路六段」→　左轉「中興路」→　右轉「臺灣大道五段」→　左轉「東大路一段」→　左轉「福順路」→　東海殯儀館。<br>南下：<br>●　國道　1　號高速公路　→　下「178台中交流道」往「沙鹿」方向　→　續走「臺灣大道四段」→　右轉「東大路一段」（請提前路口切換至外側車道）　→　左轉「福順路」→　東海殯儀館。<br>●　國道　3　號高速公路　→　下「182龍井交流道」往「台中」方向　→　續走「向上路六段」→　左轉「中興路」→　右轉「臺灣大道五段」→　左轉「東大路一段」→　左轉「福順路」→　東海殯儀館。<br>
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </li>
-                                        {% endif %}
+
                                     </ul>
                                 </div>
                             </div>
-                            
+
                             <div class="map-section">
                                 <div class="map-preview">
                                     <div id="map" style="width: 364px; height: 245px; border-radius: 8px;"></div>
@@ -1657,56 +1724,24 @@
                         </div>
 
                         <!-- 花禮說明 -->
-                        {% if data.flower_gift_description %}
+
                         <div class="flower-gift-description">
-                            {{ data.flower_gift_description|linebreaks }}
+                            <p>我們珍視您每一份寄情追思，也視之為我們的責任與承諾<br>為方便家屬統整贈花名單並準確呈現，本會場的奠禮佈置將由主辦單位全權負責。如蒙惠賜花禮，敬請使用本平臺進行訂購或聯繫客服人員，以確保您的專屬禮遇並將姓名列入贈花名單。感謝您的理解與配合。<br>訂購流程：（1）加入購物車（2）點選購物車（3）確認訂單（4）訂購人與落款填寫（5）選擇付款方式。<br>
+                            </p>
                         </div>
-                        {% endif %}
+
 
                         <!-- 花禮列表 -->
                         <div class="flower-gift-list">
                             <!-- 添加調試信息 -->
                             <div style="display: none;">
                                 Debug info:
-                                Total gifts: {{ data.flower_gifts|length }}
-                                {% for gift in data.flower_gifts %}
-                                    Gift {{ forloop.counter }}:
-                                    Name: {{ gift.name }}
-                                    Price: {{ gift.price }}
-                                    Has image: {% if gift.image %}Yes{% else %}No{% endif %}
-                                {% endfor %}
+                                Total gifts: 0
+
                             </div>
-                            
+
                             <div class="row">
-                                {% for gift in data.flower_gifts %}
-                                    <div class="col-md-3 mb-4">
-                                        <div class="flower-gift-item">
-                                            {% if gift.image %}
-                                            <img src="{{ gift.image }}" alt="花禮圖片" class="gift-image" onclick="showFullscreen('{{ gift.image }}')"
-                                                 onerror="console.error('花禮圖片載入失敗:', this.src);">
-                                            {% endif %}
-                                            <div class="gift-info">
-                                                <h5>{{ gift.name|default:'無名稱' }}</h5>
-                                                <p>NT$ {{ gift.price|default:'無價格' }}</p>
-                                                <div class="order-button">
-                                                    {% if gift.orderable %}
-                                                        <button class="btn btn-primary btn-sm" 
-                                                                onclick="addToCart('{{ gift.name }}', '{{ gift.price }}', '{{ gift.image }}')">
-                                                            加入購物車
-                                                        </button>
-                                                    {% else %}
-                                                        <button class="btn btn-secondary btn-sm" onclick="contactService()">
-                                                            無法訂購 請聯繫客服
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% if forloop.counter|divisibleby:4 and not forloop.last %}
-                                        </div><div class="row">
-                                    {% endif %}
-                                {% endfor %}
+
                             </div>
                         </div>
                     </div>
@@ -1721,66 +1756,79 @@
                         </div>
 
                         <div class="photos-section">
-                            {% if data.life_photos %}
-                                <div class="life-photos-preview">
-                                    <div class="current-photo" onclick="showFullscreen(this.querySelector('img').src)">
-                                        <img src="{{ data.life_photos.0 }}" alt="生活照預覽">
-                                    </div>
-                                    
-                                    <div class="life-photos-thumbnails">
-                                        {% for photo in data.life_photos %}
-                                            <div class="life-photo-thumbnail {% if forloop.first %}active{% endif %}" 
-                                                 onclick="switchLifePhoto(this, '{{ photo }}')">
-                                                <img src="{{ photo }}" alt="生活照">
-                                            </div>
-                                        {% endfor %}
-                                    </div>
+
+                            <div class="life-photos-preview">
+                                <div class="current-photo" onclick="showFullscreen(this.querySelector('img').src)">
+                                    <img src="https://drive.google.com/file/d/1tTHsPfpzmFb9c6K7-neLmPX4UoTHaj7F/view?usp=drivesdk"
+                                        alt="生活照預覽">
                                 </div>
-                            {% else %}
-                                <div class="no-photos-message">
-                                    尚未上傳生活照
+
+                                <div class="life-photos-thumbnails">
+
+                                    <div class="life-photo-thumbnail active"
+                                        onclick="switchLifePhoto(this, 'https://drive.google.com/file/d/1tTHsPfpzmFb9c6K7-neLmPX4UoTHaj7F/view?usp=drivesdk')">
+                                        <img src="https://drive.google.com/uc?id=1tTHsPfpzmFb9c6K7-neLmPX4UoTHaj7F"
+                                            alt="生活照">
+                                    </div>
+
+                                    <div class="life-photo-thumbnail "
+                                        onclick="switchLifePhoto(this, 'https://drive.google.com/file/d/1FieII_PYA3TDOF5-VJ8tqVIdmSNxQaiP/view?usp=drivesdk')">
+                                        <img src="https://drive.google.com/uc?id=1tTHsPfpzmFb9c6K7-neLmPX4UoTHaj7F"
+                                            alt="生活照">
+                                    </div>
+
+                                    <div class="life-photo-thumbnail "
+                                        onclick="switchLifePhoto(this, 'https://drive.google.com/file/d/1xmE4HqWa5KMHl13WRYlikTBw9QcbL96h/view?usp=drivesdk')">
+                                        <img src="https://drive.google.com/uc?id=1tTHsPfpzmFb9c6K7-neLmPX4UoTHaj7F"
+                                            alt="生活照">
+                                    </div>
+
+                                    <div class="life-photo-thumbnail "
+                                        onclick="switchLifePhoto(this, 'https://drive.google.com/file/d/1M8j2kxp-e4QW4nxi77nkxKC0HBGlsiYr/view?usp=drivesdk')">
+                                        <img src="https://drive.google.com/uc?id=1tTHsPfpzmFb9c6K7-neLmPX4UoTHaj7F"
+                                            alt="生活照">
+                                    </div>
+
                                 </div>
-                            {% endif %}
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
                 <!-- 回憶錄卡片 -->
-                {% if data.memorial_video %}
+
                 <div class="ceremony-process-container">
                     <div class="ceremony-process-content">
                         <div class="head">
-                            <h2>{{ data.deceased_name }}回憶錄</h2>
+                            <h2>某某某　居士回憶錄</h2>
                             <div class="ceremony-divider"></div>
                         </div>
 
                         <div class="video-section">
                             <div class="video-container">
-                                <iframe 
-                                    width="560" 
-                                    height="315" 
-                                    src="https://www.youtube.com/embed/{{ data.memorial_video }}" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                <iframe width="560" height="315" src="https://www.youtube.com/embed/OxGjV29kL1Q"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowfullscreen>
                                 </iframe>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endif %}
+
             </div>
         </div>
     </div>
 
-        <!-- 在 footer-container 之前添加 -->
+    <!-- 在 footer-container 之前添加 -->
     <div class="title bottom-title">
         <div class="container">
             <div class="top uk-flex uk-flex-center">
-                <img src="{% static 'images/title-left.svg' %}" alt="" class="line">
-                <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
-                     style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
+                <img src="/static/images/title-left.svg" alt="" class="line">
+                <img class="title-icon" src="/static/images/title-icon.png" alt=""
+                    style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
+                <img src="/static/images/title-right.svg" alt="" class="line">
             </div>
             <h1 style="color: #385A52;">楊子用心 · 家屬安心</h1>
         </div>
@@ -1788,97 +1836,64 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    function switchPreview(thumbnail, imageSrc) {
-        // 更新縮圖的活動狀態
-        document.querySelectorAll('.obituary-thumbnail').forEach(thumb => {
-            thumb.classList.remove('active');
-        });
-        thumbnail.classList.add('active');
-        
-        // 新預圖
-        const previewImg = document.querySelector('.obituary-preview img');
-        previewImg.src = imageSrc;
-    }
-
-    function showFullscreen(imageSrc) {
-        const fullscreen = document.querySelector('.fullscreen-preview');
-        const fullscreenImg = fullscreen.querySelector('img');
-        fullscreenImg.src = imageSrc;
-        fullscreen.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        
-        // 添加縮放動畫
-        fullscreenImg.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-            fullscreenImg.style.transform = 'scale(1)';
-        }, 50);
-    }
-
-    function hideFullscreen() {
-        const fullscreen = document.querySelector('.fullscreen-preview');
-        const fullscreenImg = fullscreen.querySelector('img');
-        
-        // 添加縮小動畫
-        fullscreenImg.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-            fullscreen.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            fullscreenImg.style.transform = 'scale(1)';
-        }, 200);
-    }
-
-    // 防止點擊圖片時觸發父元素的點擊事件
-    document.querySelector('.fullscreen-preview img').addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-
-    // 添加鍵盤事件監控
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            hideFullscreen();
-        }
-    });
-
-    document.querySelectorAll('.location-tab li').forEach(tab => {
-        tab.addEventListener('click', function() {
-            // 更新標籤狀態
-            document.querySelectorAll('.location-tab li').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            // 切換顯示內容
-            const target = this.dataset.target;
-            document.querySelectorAll('.loca-info').forEach(info => {
-                info.style.display = 'none';
+        function switchPreview(thumbnail, imageSrc) {
+            // 更新縮圖的活動狀態
+            document.querySelectorAll('.obituary-thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
             });
-            document.getElementById(`${target}-info`).style.display = 'block';
-        });
-    });
+            thumbnail.classList.add('active');
 
-    function toggleTraffic(element) {
-        const content = element.nextElementSibling;
-        const icon = element.querySelector('.toggle-icon');
-        
-        if (content.classList.contains('collapsed')) {
-            content.classList.remove('collapsed');
-            icon.textContent = '收合資訊';
-        } else {
-            content.classList.add('collapsed');
-            icon.textContent = '詳細資訊';
+            // 新預圖
+            const previewImg = document.querySelector('.obituary-preview img');
+            previewImg.src = imageSrc;
         }
-    }
-    </script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 為位置資訊標籤添加點擊事件
+
+        function showFullscreen(imageSrc) {
+            const fullscreen = document.querySelector('.fullscreen-preview');
+            const fullscreenImg = fullscreen.querySelector('img');
+            fullscreenImg.src = imageSrc;
+            fullscreen.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            // 添加縮放動畫
+            fullscreenImg.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                fullscreenImg.style.transform = 'scale(1)';
+            }, 50);
+        }
+
+        function hideFullscreen() {
+            const fullscreen = document.querySelector('.fullscreen-preview');
+            const fullscreenImg = fullscreen.querySelector('img');
+
+            // 添加縮小動畫
+            fullscreenImg.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                fullscreen.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                fullscreenImg.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // 防止點擊圖片時觸發父元素的點擊事件
+        document.querySelector('.fullscreen-preview img').addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        // 添加鍵盤事件監控
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                hideFullscreen();
+            }
+        });
+
         document.querySelectorAll('.location-tab li').forEach(tab => {
-            tab.addEventListener('click', function() {
+            tab.addEventListener('click', function () {
                 // 更新標籤狀態
-                document.querySelectorAll('.location-tab li').forEach(t => {
-                    t.classList.remove('active');
-                });
+                document.querySelectorAll('.location-tab li').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-                
-                // 切換顯示容
+
+                // 切換顯示內容
                 const target = this.dataset.target;
                 document.querySelectorAll('.loca-info').forEach(info => {
                     info.style.display = 'none';
@@ -1886,7 +1901,40 @@
                 document.getElementById(`${target}-info`).style.display = 'block';
             });
         });
-    });
+
+        function toggleTraffic(element) {
+            const content = element.nextElementSibling;
+            const icon = element.querySelector('.toggle-icon');
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                icon.textContent = '收合資訊';
+            } else {
+                content.classList.add('collapsed');
+                icon.textContent = '詳細資訊';
+            }
+        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 為位置資訊標籤添加點擊事件
+            document.querySelectorAll('.location-tab li').forEach(tab => {
+                tab.addEventListener('click', function () {
+                    // 更新標籤狀態
+                    document.querySelectorAll('.location-tab li').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    this.classList.add('active');
+
+                    // 切換顯示容
+                    const target = this.dataset.target;
+                    document.querySelectorAll('.loca-info').forEach(info => {
+                        info.style.display = 'none';
+                    });
+                    document.getElementById(`${target}-info`).style.display = 'block';
+                });
+            });
+        });
     </script>
     <div class="floating-buttons">
         <!-- 分享按鈕 -->
@@ -1895,21 +1943,21 @@
         </button>
         <div class="share-links">
             <a href="" target="_blank">
-              <img src="/static/images/fb-icon.svg" alt="">
+                <img src="/static/images/fb-icon.svg" alt="">
             </a>
             <a href="" target="_blank">
-              <img src="/static/images/line-icon.svg" alt="">
+                <img src="/static/images/line-icon.svg" alt="">
             </a>
-          </div>
-        
+        </div>
+
         <!-- 音樂按鈕 -->
         <button class="float-btn music-btn" onclick="toggleMusic()">
             <i class="fas fa-music"></i>
             <audio id="background_music" loop>
-                <source src="{{ data.background_music }}" type="audio/mpeg">
+                <source src="/static/audio/1.m4a" type="audio/mpeg">
             </audio>
         </button>
-        
+
         <!-- 回頂部按鈕 -->
         <button class="float-btn top-btn" onclick="scrollToTop()" id="topBtn">
             <i class="fas fa-arrow-up"></i>
@@ -1920,153 +1968,153 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <script>
-    // 分享功能
-    function shareContent() {
-        const shareLinks = document.querySelector('.share-links');
-        if (shareLinks.classList.contains('show')) {
-            shareLinks.classList.remove('show');
-        } else {
-            shareLinks.classList.add('show');
+        // 分享功能
+        function shareContent() {
+            const shareLinks = document.querySelector('.share-links');
+            if (shareLinks.classList.contains('show')) {
+                shareLinks.classList.remove('show');
+            } else {
+                shareLinks.classList.add('show');
+            }
         }
-    }
 
-    // 點擊其他地方時收合分享按鈕
-    document.addEventListener('click', function(event) {
-        const shareBtn = document.querySelector('.share-btn');
-        const shareLinks = document.querySelector('.share-links');
-        if (!shareBtn.contains(event.target) && !shareLinks.contains(event.target)) {
-            shareLinks.classList.remove('show');
-        }
-    });
+        // 點擊其他地方時收合分享按鈕
+        document.addEventListener('click', function (event) {
+            const shareBtn = document.querySelector('.share-btn');
+            const shareLinks = document.querySelector('.share-links');
+            if (!shareBtn.contains(event.target) && !shareLinks.contains(event.target)) {
+                shareLinks.classList.remove('show');
+            }
+        });
 
-    // 音樂控制
-    let isPlaying = false;
-    const audio = document.getElementById('background_music');
-    const musicBtn = document.querySelector('.music-btn');
+        // 音樂控制
+        let isPlaying = false;
+        const audio = document.getElementById('background_music');
+        const musicBtn = document.querySelector('.music-btn');
 
-    // 頁面載入時自動播放音樂
-    document.addEventListener('DOMContentLoaded', function() {
-        audio.load();
-        // 嘗試自動播放
-        audio.play()
-            .then(() => {
-                isPlaying = true;
-                musicBtn.classList.add('playing');
-            })
-            .catch((error) => {
-                console.error('自動播放失敗:', error);
-                isPlaying = false;
-                musicBtn.classList.remove('playing');
-            });
-    });
-
-    function toggleMusic() {
-        if (!isPlaying) {
-            // 開始播放
+        // 頁面載入時自動播放音樂
+        document.addEventListener('DOMContentLoaded', function () {
+            audio.load();
+            // 嘗試自動播放
             audio.play()
                 .then(() => {
                     isPlaying = true;
                     musicBtn.classList.add('playing');
                 })
                 .catch((error) => {
-                    console.error('播放失敗:', error);
-                    alert('音樂播放失敗，請稍後再試');
+                    console.error('自動播放失敗:', error);
+                    isPlaying = false;
+                    musicBtn.classList.remove('playing');
                 });
-        } else {
-            // 暫停播放
-            audio.pause();
+        });
+
+        function toggleMusic() {
+            if (!isPlaying) {
+                // 開始播放
+                audio.play()
+                    .then(() => {
+                        isPlaying = true;
+                        musicBtn.classList.add('playing');
+                    })
+                    .catch((error) => {
+                        console.error('播放失敗:', error);
+                        alert('音樂播放失敗，請稍後再試');
+                    });
+            } else {
+                // 暫停播放
+                audio.pause();
+                isPlaying = false;
+                musicBtn.classList.remove('playing');
+            }
+        }
+
+        // 監聽音樂播放結束事件
+        audio.addEventListener('ended', function () {
+            // 因為設置了 loop，這個事件可能發
             isPlaying = false;
             musicBtn.classList.remove('playing');
-        }
-    }
-
-    // 監聽音樂播放結束事件
-    audio.addEventListener('ended', function() {
-        // 因為設置了 loop，這個事件可能發
-        isPlaying = false;
-        musicBtn.classList.remove('playing');
-    });
-
-    // 監聽音樂播放錯誤事件
-    audio.addEventListener('error', function(e) {
-        console.error('音樂播放錯誤:', e);
-        isPlaying = false;
-        musicBtn.classList.remove('playing');
-    });
-
-    // 回到頂部功能
-    window.onscroll = function() {
-        const topBtn = document.getElementById("topBtn");
-        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-            topBtn.style.display = "flex";
-        } else {
-            topBtn.style.display = "flex";
-        }
-    };
-
-    function scrollToTop() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
         });
-    }
+
+        // 監聽音樂播放錯誤事件
+        audio.addEventListener('error', function (e) {
+            console.error('音樂播放錯誤:', e);
+            isPlaying = false;
+            musicBtn.classList.remove('playing');
+        });
+
+        // 回到頂部功能
+        window.onscroll = function () {
+            const topBtn = document.getElementById("topBtn");
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                topBtn.style.display = "flex";
+            } else {
+                topBtn.style.display = "flex";
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     </script>
     <script>
-    function switchLifePhoto(thumbnail, photoSrc) {
-        // 更新縮圖的活動狀態
-        document.querySelectorAll('.life-photo-thumbnail').forEach(thumb => {
-            thumb.classList.remove('active');
-        });
-        thumbnail.classList.add('active');
-        
-        // 更新預覽圖
-        const previewImg = document.querySelector('.current-photo img');
-        previewImg.src = photoSrc;
-    }
+        function switchLifePhoto(thumbnail, photoSrc) {
+            // 更新縮圖的活動狀態
+            document.querySelectorAll('.life-photo-thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            thumbnail.classList.add('active');
+
+            // 更新預覽圖
+            const previewImg = document.querySelector('.current-photo img');
+            previewImg.src = photoSrc;
+        }
     </script>
 
     <!-- 在已有的 script 標籤中添加以下函數 -->
-<script>
-    // 購物車相關函數
-    function openCart() {
-        // 檢查購物車是否為空
-        const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-        if (cartItems.length === 0) {
-            alert('購物車是空的！');
-            return;
+    <script>
+        // 購物車相關函數
+        function openCart() {
+            // 檢查購物車是否為空
+            const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+            if (cartItems.length === 0) {
+                alert('購物車是空的！');
+                return;
+            }
+            // 跳轉到購物車頁面
+            window.location.href = "/buy_car/";
         }
-        // 跳轉到購物車頁面
-        window.location.href = "{% url 'buy_car' %}";
-    }
-    
-    // 添加到購物車
-    function addToCart(name, price, image) {
-        let cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-        
-        cartItems.push({
-            name: name,
-            price: price,
-            image: image
+
+        // 添加到購物車
+        function addToCart(name, price, image) {
+            let cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+
+            cartItems.push({
+                name: name,
+                price: price,
+                image: image
+            });
+
+            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+            updateCartCount();
+            alert('已加入花禮購物車！');
+        }
+
+        // 更新購物車數量顯示
+        function updateCartCount() {
+            const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
+            const cartCount = document.getElementById('cartCount');
+            if (cartCount) {
+                cartCount.textContent = cartItems.length;
+            }
+        }
+
+        // 頁面加載時初始化購物車
+        document.addEventListener('DOMContentLoaded', function () {
+            updateCartCount();
         });
-        
-        localStorage.setItem('cartItems', JSON.stringify(cartItems));
-        updateCartCount();
-        alert('已加入花禮購物車！');
-    }
-    
-    // 更新購物車數量顯示
-    function updateCartCount() {
-        const cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-        const cartCount = document.getElementById('cartCount');
-        if (cartCount) {
-            cartCount.textContent = cartItems.length;
-        }
-    }
-    
-    // 頁面加載時初始化購物車
-    document.addEventListener('DOMContentLoaded', function() {
-        updateCartCount();
-    });
     </script>
     <div class="footer-container">
         <div class="footer-content">
@@ -2074,28 +2122,24 @@
                 <!-- 承辦人員資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        <img src="{% static 'images/agent_logo.jpg' %}" alt="承辦人員所屬公司">
+                        <img src="/static/images/agent_logo.jpg" alt="承辦人員所屬公司">
                     </div>
                     <div class="info">
                         <h3><a>禮儀師資訊</a></h3>
-                        <p><span>禮儀師：</span>{{ data.agent_name }}</p>
-                        <p><span>聯絡電話：</span><a href="tel:{{ data.agent_phone }}">{{ data.agent_phone }}</a></p>
-                        {% comment %} <p class="line">
-                            <a href="https://line.me/ti/p/PV76cekn_H" target="_blank">
-                                <img src="{% static 'images/img-line.svg' %}" alt="Line">
-                            </a>
-                        </p> {% endcomment %}
+                        <p><span>禮儀師：</span>gdfgdsgdfg</p>
+                        <p><span>聯絡電話：</span><a href="tel:0916800633">0916800633</a></p>
+
                     </div>
                 </div>
                 <!-- 禮儀公司資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        <img src="{% static 'images/logo.jpg' %}" alt="楊子佛教Logo">
+                        <img src="/static/images/logo.jpg" alt="楊子佛教Logo">
                     </div>
                     <div class="info">
                         <h3><a href="https://www.leniency.com.tw/" target="_blank">楊子佛教禮儀(股)公司</a></h3>
                         <p><span>全台24H客服：</span>0800-365-108</p>
-                        <p><span>訂  花  專  線</span><a href="tel:0965-606-100">0965-606-100</a></p>
+                        <p><span>訂 花 專 線</span><a href="tel:0965-606-100">0965-606-100</a></p>
                     </div>
                 </div>
             </div>
@@ -2103,7 +2147,7 @@
     </div>
     <div class="footer-bottom-conpany-info">
         <a>楊子佛教相關連結 >> </a>
-        <a href="https://www.leniency.com.tw/" target="_blank"> 楊子佛教官網</a> 
+        <a href="https://www.leniency.com.tw/" target="_blank"> 楊子佛教官網</a>
         <a> | </a>
         <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> 楊子佛教粉絲團</a>
         <a> | </a>
@@ -2112,7 +2156,7 @@
         <a href="https://maps.app.goo.gl/cQEdZ9SVdXe9d4zm7" target="_blank"> 留下您的Google評論</a>
     </div>
     <div class="copyright">
-        © {% now "Y" %} 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
+        © 2024 楊子佛教禮儀雲端訃聞系統 All Rights Reserved.
     </div>
     <div class="shopping-cart-btn" onclick="openCart()">
         <i class="fas fa-shopping-cart"></i>
@@ -2124,4 +2168,5 @@
         <img src="" alt="預覽圖片">
     </div>
 </body>
+
 </html>

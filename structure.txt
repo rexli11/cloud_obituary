@@ -1,0 +1,41 @@
+yz_cloud_obituary/
+├── cloud_obituary/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── cloud_app/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── urls.py
+│   └── views.py
+├── users/
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py
+│   ├── urls.py
+│   └── views.py
+├── templates/
+│   ├── base.html
+│   ├── login.html
+│   ├── register.html
+│   ├── preview_employee.html
+│   ├── obituary_base.html
+│   ├── obituary_maker.html
+│   ├── preview_obituary.html
+│   ├── case_management.html
+│   └── buy_car.html
+├── static/
+│   ├── images/
+│   ├── css/
+│   ├── js/
+│   └── fonts/
+├── media/
+├── manage.py
+├── requirements.txt
+├── README.md
+├── structure.txt
+└── function_list.txt

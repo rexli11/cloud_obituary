@@ -4,6 +4,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 import mysql.connector
 from django.conf import settings
+from google.oauth2 import service_account
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+from datetime import datetime
+import io
+import os
+from google.auth.transport.requests import Request
+import json
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 def connection_db():
     """建立資料庫連線"""
@@ -60,7 +72,7 @@ def login_view(request):
         
         db = connection_db()
         if db is None:
-            messages.error(request, '系統錯誤，請稍後再試')
+            messages.error(request, '系錯誤，請稍後再試')
             return render(request, 'login.html')
             
         cursor = db.cursor(dictionary=True)  # 使用 dictionary=True 來獲取列名
@@ -150,7 +162,7 @@ def home_view(request):
         'can_access_case': permission_level in ['0', '1', '2'],
         'can_access_obituary': permission_level in ['0', '1', '3'],
         'can_access_dashboard': True,
-        'permission_level': permission_level  # 确保传递权限等级到模板
+        'permission_level': permission_level  # 保传递权限等级到模板
     }
     return render(request, 'base.html', context)
 
@@ -162,17 +174,45 @@ def logout_view(request):
 
 def obituary_base(request):
     """訃聞製作基礎頁面"""
-    print(f"訪問訃聞頁面")  # 调试信息
-    print(f"obituary_base session狀態: {dict(request.session)}")  # 调试信息
+    print(f"訪問訃聞頁面")
+    print(f"obituary_base session狀態: {dict(request.session)}")
     
-    # 检查是否已登录
     if not request.session.get('is_authenticated'):
         return redirect('login')
     
-    return render(request, 'obituary_base.html')
+    db = connection_db()
+    if db is None:
+        messages.error(request, '系統錯誤，請稍後再試')
+        return redirect('home')
+    
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT id, deceased_name, created_at, service_area, file_path 
+            FROM obituary 
+            ORDER BY created_at DESC
+        """)
+        obituaries = cursor.fetchall()
+        
+        # 修改連結格式
+        for obituary in obituaries:
+            if obituary['file_path']:
+                # 使用靜態文件 URL
+                obituary['file_path'] = f"{settings.STATIC_URL}obituaries/{obituary['file_path']}"
+        
+        return render(request, 'obituary_base.html', {'obituaries': obituaries})
+        
+    except mysql.connector.Error as err:
+        print(f"數據庫錯誤: {err}")
+        messages.error(request, '系統錯誤，請稍後再試')
+        return redirect('home')
+        
+    finally:
+        cursor.close()
+        db.close()
 
 def create_obituary(request):
-    """創建新訃聞"""
+    """創新訃聞"""
     # if not request.session.get('is_authenticated'):
     #     return redirect('login')
     return render(request, 'obituary_maker.html')
@@ -183,110 +223,196 @@ def search_obituary(request):
     #     return redirect('login')
     return render(request, 'search_obituary.html')
 
+# Google Drive API 設置
+SCOPES = ['https://www.googleapis.com/auth/drive']
+FOLDER_ID = '1vl5PUbbIKwBeBW5Q_DtvzqH8MCsm9jEs'
+SERVICE_ACCOUNT_FILE = 'D:\\yz_cloud_obituary\\cloud_obituary\\key\\test-cloud-443501-2b5eb85fe489.json'
+
+def get_google_drive_service():
+    """初始化 Google Drive API 服務"""
+    try:
+        # 使用服務帳號憑證
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, 
+            scopes=SCOPES
+        )
+        
+        # 建立服務
+        service = build('drive', 'v3', credentials=credentials)
+        return service
+        
+    except Exception as e:
+        print(f"Google Drive API 初始化錯誤: {e}")
+        return None
+
+def upload_to_drive(file_bytes, filename, folder_id):
+    """上傳檔案到指定的 Google Drive 資料夾並返回檔案連結"""
+    service = get_google_drive_service()
+    if not service:
+        return None
+    
+    try:
+        # 準備檔案數據
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id]
+        }
+        
+        # 創建媒體檔案
+        fh = io.BytesIO(file_bytes)
+        media = MediaIoBaseUpload(fh, mimetype='image/jpeg', resumable=True)
+        
+        # 上傳檔案
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, webViewLink'
+        ).execute()
+        
+        # 修改檔案權限為所有人可讀
+        permission = {
+            'type': 'anyone',
+            'role': 'reader'
+        }
+        service.permissions().create(
+            fileId=file.get('id'),
+            body=permission
+        ).execute()
+        
+        return file.get('webViewLink')
+        
+    except Exception as e:
+        print(f"檔案上傳錯誤: {e}")
+        return None
+
 def preview_obituary(request):
     """預覽訃聞"""
     if request.method == 'POST':
-        # 获取 YouTube URL 并处理
-        memorial_video = request.POST.get('memorial_video', '')
-        video_id = None
-        
-        if memorial_video:
-            if 'youtu.be/' in memorial_video:
-                video_id = memorial_video.split('youtu.be/')[-1]
-            elif 'youtube.com/watch?v=' in memorial_video:
-                video_id = memorial_video.split('watch?v=')[-1]
-            elif 'youtube.com/embed/' in memorial_video:
-                video_id = memorial_video.split('embed/')[-1]
-            else:
-                video_id = memorial_video  # 假设直接输入的是视频 ID
-                
-            # 移除任何额外的参数
-            if '&' in video_id:
-                video_id = video_id.split('&')[0]
-                
-        preview_data = {
-            'deceased_name': request.POST.get('deceased_name', ''),
-            'birth_date': request.POST.get('birth_date', ''),
-            'death_date': request.POST.get('death_date', ''),
-            'hide_birth_date': request.POST.get('hide_birth_date') == 'on',
-            'hide_death_date': request.POST.get('hide_death_date') == 'on',
-            'ceremony_details': request.POST.get('ceremony_details', ''),
-            'desktop_background': request.POST.get('desktop_background', ''),
-            'font_style': request.POST.get('font_style', 'fangsong'),
-            'location_name': request.POST.get('farewell_location_name', ''),
-            'location_address': request.POST.get('farewell_location_address', ''),
-            'location_area': request.POST.get('farewell_location_area', ''),
-            'traffic_info': request.POST.get('farewell_traffic_info', ''),
-            'tomb_location_name': request.POST.get('tomb_location_name', ''),
-            'tomb_location_address': request.POST.get('tomb_location_address', ''),
-            'tomb_location_area': request.POST.get('tomb_location_area', ''),
-            'tomb_traffic_info': request.POST.get('tomb_traffic_info', ''),
-            'flower_gift_description': request.POST.get('flower_gift_description', ''),
-            'agent_name': request.POST.get('agent_name', ''),
-            'agent_phone': request.POST.get('agent_phone', ''),
-            'background_music': request.POST.get('background_music', ''),
-            'ceremony_times': [],
-            'flower_gifts': [],
-            'life_photos': [],
-            'memorial_video': video_id,  # 使用处理后的视频 ID
-        }
-        
-        # 打印调试信息
-        print(f"Original URL: {memorial_video}")
-        print(f"Video ID: {video_id}")
-        
-        # 处理仪式时间
-        ceremony_times = request.POST.getlist('ceremony_time[]', [])
-        ceremony_contents = request.POST.getlist('ceremony_content[]', [])
-        preview_data['ceremony_times'] = list(zip(ceremony_times, ceremony_contents))
-
-        # 处理上传的图片
-        if 'deceased_photo' in request.FILES:
-            file = request.FILES['deceased_photo']
-            import base64
-            preview_data['deceased_photo'] = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+        # 检查登录状态
+        if not request.session.get('is_authenticated'):
+            messages.error(request, '請先登入')
+            return redirect('login')
             
-        if 'obituary_front_image' in request.FILES:
-            file = request.FILES['obituary_front_image']
-            import base64
-            preview_data['obituary_front_image'] = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+        try:
+            # 获取表单数据
+            preview_data = {
+                'deceased_name': request.POST.get('deceased_name', ''),
+                'birth_date': request.POST.get('birth_date', ''),
+                'death_date': request.POST.get('death_date', ''),
+                'hide_birth_date': request.POST.get('hide_birth_date') == 'on',
+                'hide_death_date': request.POST.get('hide_death_date') == 'on',
+                'ceremony_details': request.POST.get('ceremony_details', ''),
+                'desktop_background': request.POST.get('desktop_background', ''),
+                'font_style': request.POST.get('font_style', 'fangsong'),
+                'location_name': request.POST.get('farewell_location_name', ''),
+                'location_address': request.POST.get('farewell_location_address', ''),
+                'location_area': request.POST.get('farewell_location_area', ''),
+                'traffic_info': request.POST.get('farewell_traffic_info', ''),
+                'tomb_location_name': request.POST.get('tomb_location_name', ''),
+                'tomb_location_address': request.POST.get('tomb_location_address', ''),
+                'tomb_location_area': request.POST.get('tomb_location_area', ''),
+                'tomb_traffic_info': request.POST.get('tomb_traffic_info', ''),
+                'flower_gift_description': request.POST.get('flower_gift_description', ''),
+                'agent_name': request.POST.get('agent_name', ''),
+                'agent_phone': request.POST.get('agent_phone', ''),
+                'background_music': request.POST.get('background_music', ''),
+                'ceremony_items': [],
+                'flower_gifts': [],
+                'life_photos': [],
+                'deceased_photo': None,
+                'obituary_front': None,
+                'obituary_back': None
+            }
+
+            # youtube連結
+            video_url = request.POST.get('memorial_video', '')
+            if video_url:
+                video_id = extract_youtube_id(video_url)
+                if video_id:
+                    preview_data['memorial_video'] = video_id
+
+            # 處理儀式時間和內容
+            ceremony_times = request.POST.getlist('ceremony_time[]', [])
+            ceremony_contents = request.POST.getlist('ceremony_content[]', [])
             
-        if 'obituary_back_image' in request.FILES:
-            file = request.FILES['obituary_back_image']
-            import base64
-            preview_data['obituary_back_image'] = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
-
-        # 处理生活照片
-        for key in request.FILES:
-            if key.startswith('life_photos['):
-                file = request.FILES[key]
-                import base64
-                preview_data['life_photos'].append(
-                    f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
-                )
-
-        # 修改处理花礼的部分
-        flower_gifts = []
-        for key in request.FILES:
-            if key.startswith('flower_gift_list['):
-                index = key[key.find('[')+1:key.find(']')]
-                name = request.POST.get(f'flower_gift_list[{index}][name]', '')
-                price = request.POST.get(f'flower_gift_list[{index}][price]', '')
-                orderable = request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'  # 获取可订购状态
-                file = request.FILES[key]
-                import base64
-                image = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
-                flower_gifts.append({
-                    'name': name,
-                    'price': price,
-                    'image': image,
-                    'orderable': orderable  # 添加可订购状态到数据中
+            # 組合儀式流程數據
+            for time, content in zip(ceremony_times, ceremony_contents):
+                preview_data['ceremony_items'].append({
+                    'time': time,
+                    'content': content
                 })
-        preview_data['flower_gifts'] = flower_gifts
 
-        return render(request, 'preview_obituary.html', {'data': preview_data})
+            # 處理上傳圖片
+            if 'deceased_photo' in request.FILES:
+                file = request.FILES['deceased_photo']
+                import base64
+                preview_data['deceased_photo'] = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+                
+            if 'obituary_front_image' in request.FILES:
+                file = request.FILES['obituary_front_image']
+                import base64
+                preview_data['obituary_front'] = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+                
+            if 'obituary_back_image' in request.FILES:
+                file = request.FILES['obituary_back_image']
+                import base64
+                preview_data['obituary_back'] = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+
+            # 處理生活照片
+            for key in request.FILES:
+                if key.startswith('life_photos['):
+                    file = request.FILES[key]
+                    import base64
+                    preview_data['life_photos'].append(
+                        f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+                    )
+
+            # 處理花禮照片
+            for key in request.FILES:
+                if key.startswith('flower_gift_list['):
+                    index = key[key.find('[')+1:key.find(']')]
+                    name = request.POST.get(f'flower_gift_list[{index}][name]', '')
+                    price = request.POST.get(f'flower_gift_list[{index}][price]', '')
+                    orderable = request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'
+                    file = request.FILES[key]
+                    import base64
+                    image = f"data:image/{file.content_type.split('/')[-1]};base64,{base64.b64encode(file.read()).decode()}"
+                    preview_data['flower_gifts'].append({
+                        'name': name,
+                        'price': price,
+                        'image': image,
+                        'orderable': orderable
+                    })
+
+            return render(request, 'preview_obituary.html', {'data': preview_data})
+            
+        except Exception as e:
+            print(f"預覽錯誤: {e}")
+            messages.error(request, '預覽失敗，請稍後再試')
+            return redirect('create_obituary')
     
     return redirect('create_obituary')
+
+def extract_youtube_id(url):
+    """从 YouTube URL 提取视频 ID"""
+    if not url:
+        return None
+        
+    import re
+    
+    # 处理多种 YouTube URL 格式
+    patterns = [
+        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\?\/]+)',
+        r'youtube\.com\/watch\?.*v=([^&]+)',
+        r'youtube\.com\/shorts\/([^&\?\/]+)'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
+    return None
 
 def buy_car(request):
     """購物車頁面"""
@@ -308,7 +434,7 @@ def register(request):
     
     # 檢查是否已登入
     if not request.session.get('is_authenticated'):
-        messages.error(request, '請先登入')
+        messages.error(request, '請先登')
         return redirect('login')
     
     # 檢查是否為超級用戶
@@ -333,7 +459,7 @@ def register(request):
         # 連接資料庫
         db = connection_db()
         if db is None:
-            messages.error(request, '系統錯誤，請稍後再試')
+            messages.error(request, '系統錯誤請稍後再試')
             return render(request, 'register.html')
         
         cursor = db.cursor()
@@ -393,6 +519,70 @@ def register(request):
     
     # GET 請求
     return render(request, 'register.html', {'session': request.session})
+
+# 在文件末尾添加新函数
+def view_obituary(request, obituary_id):
+    """查看訃聞頁面"""
+    try:
+        # 連接資料庫
+        db = connection_db()
+        if not db:
+            raise Exception("資料庫連接失敗")
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            # 獲取訃聞資料
+            cursor.execute("""
+                SELECT * FROM obituary WHERE id = %s
+            """, [obituary_id])
+            obituary_data = cursor.fetchone()
+            
+            if not obituary_data:
+                messages.error(request, '找不到該訃聞')
+                return redirect('obituary_base')
+            
+            # 獲取照片資料
+            cursor.execute("""
+                SELECT * FROM photos WHERE obituary_id = %s
+            """, [obituary_id])
+            photos = cursor.fetchall()
+            
+            # 準備模板數據
+            context = {
+                'obituary': obituary_data,
+                'photos': photos,
+                'data': {
+                    'deceased_name': obituary_data['deceased_name'],
+                    'birth_date': obituary_data['birth_date'],
+                    'death_date': obituary_data['death_date'],
+                    'ceremony_details': obituary_data['ceremony_details'],
+                    'ceremony_process_list': json.loads(obituary_data['ceremony_process_list']) if obituary_data['ceremony_process_list'] else {},
+                    'farewell_form': json.loads(obituary_data['farewell_form']) if obituary_data['farewell_form'] else {},
+                    'tomb_form': json.loads(obituary_data['tomb_form']) if obituary_data['tomb_form'] else None,
+                    'flower_gift_description': obituary_data['flower_gift_description'],
+                    'memorial_video': obituary_data['memorial_video'],
+                    'agent_name': obituary_data['agent_name'],
+                    'agent_phone': obituary_data['agent_phone'],
+                    'service_area': obituary_data['service_area']
+                }
+            }
+            
+            return render(request, 'preview_obituary.html', context)
+            
+        except Exception as e:
+            print(f"查看訃聞錯誤: {e}")
+            messages.error(request, '無法顯示訃聞')
+            return redirect('obituary_base')
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"查看訃聞錯誤: {e}")
+        messages.error(request, '系統錯誤')
+        return redirect('obituary_base')
 
 def preview_employee(request):
     """查看職員列表"""
@@ -522,12 +712,493 @@ def delete_employee(request, user_id):
     except mysql.connector.Error as err:
         db.rollback()
         print(f"數據庫錯誤: {err}")
-        messages.error(request, '刪除失敗，請稍後再試')
+        messages.error(request, '刪除失敗，稍後再試')
         
     finally:
         cursor.close()
         db.close()
     
     return redirect('preview_employee')
+
+def make_obituary(request):
+    """製作訃聞並上傳照片"""
+    if request.method == 'POST':
+        print("開始處理訃聞製作請求...")
+        
+        if not request.session.get('is_authenticated'):
+            print("用戶未登入")
+            messages.error(request, '請先登入')
+            return redirect('login')
+            
+        try:
+            print("開始資料庫連接...")
+            db = connection_db()
+            if db is None:
+                raise Exception("資料庫連接失敗")
+            
+            cursor = db.cursor(dictionary=True)
+            
+            try:
+                print("開始插入訃聞基本資料...")
+                # 插入訃聞基本資料到資料庫，對應 obituary 表的欄位
+                cursor.execute("""
+                    INSERT INTO obituary (
+                        service_area,
+                        deceased_name,
+                        birth_date,
+                        death_date,
+                        ceremony_details,
+                        ceremony_process_list,
+                        farewell_form,
+                        tomb_form,
+                        flower_gift_description,
+                        flower_gifts,
+                        memorial_video,
+                        agent_name,
+                        agent_phone,
+                        created_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
+                    )
+                """, [
+                    request.POST.get('area_selection'),
+                    request.POST.get('deceased_name'),
+                    request.POST.get('birth_date') or None,
+                    request.POST.get('death_date') or None,
+                    request.POST.get('ceremony_details'),
+                    # 儀式流列表 JSON 格式
+                    json.dumps({
+                        'times': request.POST.getlist('ceremony_time[]'),
+                        'contents': request.POST.getlist('ceremony_content[]')
+                    }),
+                    # 告別式資訊 JSON 格式
+                    json.dumps({
+                        'location_name': request.POST.get('farewell_location_name'),
+                        'location_address': request.POST.get('farewell_location_address'),
+                        'location_area': request.POST.get('farewell_location_area'),
+                        'traffic_info': request.POST.get('farewell_traffic_info')
+                    }),
+                    # 靈堂資訊 JSON 格式
+                    json.dumps({
+                        'location_name': request.POST.get('tomb_location_name'),
+                        'location_address': request.POST.get('tomb_location_address'),
+                        'location_area': request.POST.get('tomb_location_area'),
+                        'traffic_info': request.POST.get('tomb_traffic_info')
+                    }) if request.POST.get('tomb_location_name') else None,
+                    request.POST.get('flower_gift_description'),
+                    0,  # flower_gifts 初始值設為 0
+                    request.POST.get('memorial_video'),
+                    request.POST.get('agent_name'),
+                    request.POST.get('agent_phone')
+                ])
+                
+                # 獲取新插入的訃聞ID
+                obituary_id = cursor.lastrowid
+                print(f"新建訃聞 ID: {obituary_id}")
+                
+                # 獲取訃聞數據用於生成頁面
+                cursor.execute("""
+                    SELECT * FROM obituary WHERE id = %s
+                """, [obituary_id])
+                obituary_data = cursor.fetchone()
+                print(f"訃聞數據: {obituary_data}")
+                
+                # 處理照片上傳到 Google Drive
+                print("開始處理 Google Drive 照片上傳...")
+                service = get_google_drive_service()
+                photo_links = {}  # 用於存儲照片連結
+                
+                if service:
+                    # 創建資料夾
+                    folder_name = f"{request.POST.get('deceased_name')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    print(f"創建 Google Drive 資料夾: {folder_name}")
+                    
+                    folder_metadata = {
+                        'name': folder_name,
+                        'mimeType': 'application/vnd.google-apps.folder',
+                        'parents': [FOLDER_ID]
+                    }
+                    folder = service.files().create(
+                        body=folder_metadata,
+                        fields='id'
+                    ).execute()
+                    new_folder_id = folder.get('id')
+                    print(f"��資料夾 ID: {new_folder_id}")
+                    
+                    # 處理往生者照片
+                    if 'deceased_photo' in request.FILES:
+                        print("處理往生者照片...")
+                        photo_file = request.FILES['deceased_photo']
+                        photo_link = upload_to_drive(
+                            photo_file.read(),
+                            f"deceased_photo_{obituary_id}.jpg",
+                            new_folder_id
+                        )
+                        if photo_link:
+                            print(f"往生者照片上傳成功: {photo_link}")
+                            photo_links['deceased_photo'] = photo_link
+                            cursor.execute("""
+                                INSERT INTO photos (obituary_id, photo_type, photo_link)
+                                VALUES (%s, 'personal', %s)
+                            """, [obituary_id, photo_link])
+
+                    # 處理訃聞正面照片
+                    if 'obituary_front_image' in request.FILES:
+                        print("處理訃聞正面照片...")
+                        front_file = request.FILES['obituary_front_image']
+                        front_link = upload_to_drive(
+                            front_file.read(),
+                            f"front_{obituary_id}.jpg",
+                            new_folder_id
+                        )
+                        if front_link:
+                            print(f"訃聞正面照片上傳成功: {front_link}")
+                            photo_links['obituary_front'] = front_link
+                            cursor.execute("""
+                                INSERT INTO photos (obituary_id, photo_type, photo_link)
+                                VALUES (%s, 'obituary_front', %s)
+                            """, [obituary_id, front_link])
+
+                    # 處理訃聞背面照片
+                    if 'obituary_back_image' in request.FILES:
+                        print("處理訃聞背面照片...")
+                        back_file = request.FILES['obituary_back_image']
+                        back_link = upload_to_drive(
+                            back_file.read(),
+                            f"back_{obituary_id}.jpg",
+                            new_folder_id
+                        )
+                        if back_link:
+                            print(f"訃聞背面照片上傳成功: {back_link}")
+                            photo_links['obituary_back'] = back_link
+                            cursor.execute("""
+                                INSERT INTO photos (obituary_id, photo_type, photo_link)
+                                VALUES (%s, 'obituary_back', %s)
+                            """, [obituary_id, back_link])
+
+                    # 處理生活照片
+                    life_photos = []
+                    for key in request.FILES:
+                        if key.startswith('life_photos['):
+                            print(f"處理生活照片: {key}")
+                            photo_file = request.FILES[key]
+                            index = key[key.find('[')+1:key.find(']')]
+                            photo_link = upload_to_drive(
+                                photo_file.read(),
+                                f"life_photo_{obituary_id}_{index}.jpg",
+                                new_folder_id
+                            )
+                            if photo_link:
+                                print(f"生活照片上傳成功: {photo_link}")
+                                life_photos.append(photo_link)
+                                cursor.execute("""
+                                    INSERT INTO photos (obituary_id, photo_type, photo_link)
+                                    VALUES (%s, 'life', %s)
+                                """, [obituary_id, photo_link])
+
+                    # 處理花禮照片
+                    flower_gifts_data = []
+                    for key in request.FILES:
+                        if key.startswith('flower_gift_list['):
+                            print(f"處理花禮照: {key}")
+                            photo_file = request.FILES[key]
+                            index = key[key.find('[')+1:key.find(']')]
+                            
+                            # 獲取花禮相關資訊
+                            name = request.POST.get(f'flower_gift_list[{index}][name]', '')
+                            price = request.POST.get(f'flower_gift_list[{index}][price]', '')
+                            orderable = request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'
+                            
+                            photo_link = upload_to_drive(
+                                photo_file.read(),
+                                f"flower_gift_{obituary_id}_{index}.jpg",
+                                new_folder_id
+                            )
+                            
+                            if photo_link:
+                                print(f"花禮照片上傳成功: {photo_link}")
+                                flower_gifts_data.append({
+                                    'name': name,
+                                    'price': price,
+                                    'image': photo_link,
+                                    'orderable': orderable
+                                })
+                                cursor.execute("""
+                                    INSERT INTO photos (obituary_id, photo_type, photo_link)
+                                    VALUES (%s, 'flower_gift', %s)
+                                """, [obituary_id, photo_link])
+
+                print("照片處理完成")
+                print(f"所有照片連結: {photo_links}")
+
+                # 從資料庫獲取所有照片連結
+                cursor.execute("""
+                    SELECT photo_type, photo_link 
+                    FROM photos 
+                    WHERE obituary_id = %s
+                """, [obituary_id])
+                db_photos = cursor.fetchall()
+                
+                # 整理照片連結
+                photo_data = {
+                    'deceased_photo': '',
+                    'obituary_front': '',
+                    'obituary_back': '',
+                    'life_photos': [],
+                    'flower_gifts': []
+                }
+                
+                # 從資料庫記錄中獲取照片連結
+                for photo in db_photos:
+                    if photo['photo_type'] == 'personal':
+                        photo_data['deceased_photo'] = photo['photo_link']
+                    elif photo['photo_type'] == 'obituary_front':
+                        photo_data['obituary_front'] = photo['photo_link']
+                    elif photo['photo_type'] == 'obituary_back':
+                        photo_data['obituary_back'] = photo['photo_link']
+                    elif photo['photo_type'] == 'life':
+                        photo_data['life_photos'].append(photo['photo_link'])
+                    elif photo['photo_type'] == 'flower_gift':
+                        # 尋找對應的花禮資訊
+                        for gift in flower_gifts_data:
+                            if gift['image'] == photo['photo_link']:
+                                photo_data['flower_gifts'].append(gift)
+                                break
+
+                print("從資料庫獲取的照片連結:")
+                print(f"往生者照片: {photo_data['deceased_photo']}")
+                print(f"訃聞正面: {photo_data['obituary_front']}")
+                print(f"訃聞背面: {photo_data['obituary_back']}")
+                print(f"生活照片數量: {len(photo_data['life_photos'])}")
+                print(f"花禮數量: {len(photo_data['flower_gifts'])}")
+
+                # 生成檔案名稱
+                file_name = f"obituary_{obituary_id}.html"
+                print(f"生成檔案名稱: {file_name}")
+                
+                # 確保目錄存在
+                obituaries_dir = os.path.join(settings.BASE_DIR, 'static', 'obituaries')
+                if not os.path.exists(obituaries_dir):
+                    os.makedirs(obituaries_dir)
+                print(f"存儲目錄: {obituaries_dir}")
+                
+                # 生成完整的檔案路徑
+                file_path = os.path.join(obituaries_dir, file_name)
+                
+                # 更新資料庫中的檔案路徑
+                cursor.execute("""
+                    UPDATE obituary 
+                    SET file_path = %s 
+                    WHERE id = %s
+                """, [file_name, obituary_id])
+
+                # 修改儀式流程的數據結構
+                try:
+                    # 解析 JSON 數據
+                    ceremony_process = json.loads(obituary_data['ceremony_process_list']) if obituary_data['ceremony_process_list'] else {}
+                    farewell_info = json.loads(obituary_data['farewell_form']) if obituary_data['farewell_form'] else {}
+                    tomb_info = json.loads(obituary_data['tomb_form']) if obituary_data['tomb_form'] else {}
+
+                    # 將時間和內容組合成列表
+                    ceremony_items = []
+                    times = ceremony_process.get('times', [])
+                    contents = ceremony_process.get('contents', [])
+                    
+                    for i in range(len(times)):
+                        if i < len(contents):
+                            ceremony_items.append({
+                                'time': times[i],
+                                'content': contents[i]
+                            })
+
+                    context = {
+                        'obituary': obituary_data,
+                        'data': {
+                            'deceased_name': obituary_data['deceased_name'],
+                            'birth_date': obituary_data['birth_date'],
+                            'death_date': obituary_data['death_date'],
+                            
+                            # 告別式說明
+                            'ceremony_details': obituary_data['ceremony_details'],
+                            
+                            # 儀式流程
+                            'ceremony_items': ceremony_items,
+                            
+                            # 告別式位置資訊
+                            'location_name': farewell_info.get('location_name', ''),
+                            'location_address': farewell_info.get('location_address', ''),
+                            'location_area': farewell_info.get('location_area', ''),
+                            'traffic_info': farewell_info.get('traffic_info', ''),
+                            
+                            # 靈堂位置資訊
+                            'tomb_location_name': tomb_info.get('location_name', ''),
+                            'tomb_location_address': tomb_info.get('location_address', ''),
+                            'tomb_location_area': tomb_info.get('location_area', ''),
+                            'tomb_traffic_info': tomb_info.get('traffic_info', ''),
+                            
+                            # 其他資訊
+                            'flower_gift_description': obituary_data['flower_gift_description'],
+                            'memorial_video': extract_youtube_id(obituary_data['memorial_video']),
+                            'agent_name': obituary_data['agent_name'],
+                            'agent_phone': obituary_data['agent_phone'],
+                            'service_area': obituary_data['service_area'],
+                            
+                            # 照片連結
+                            'deceased_photo': photo_data['deceased_photo'],
+                            'obituary_front': photo_data['obituary_front'],
+                            'obituary_back': photo_data['obituary_back'],
+                            'life_photos': photo_data['life_photos'],
+                            'flower_gifts': photo_data['flower_gifts'],
+                            
+                            # 背景和字體設置
+                            'desktop_background': request.POST.get('desktop_background', ''),
+                            'font_style': request.POST.get('font_style', 'fangsong'),
+                            
+                            # 背景音樂
+                            'background_music': request.POST.get('background_music', '')
+                        }
+                    }
+
+                    print("準備渲染數據:")
+                    print(f"告別式說明: {context['data']['ceremony_details']}")
+                    print(f"儀式流程: {context['data']['ceremony_items']}")
+                    print(f"告別式位置: {context['data']['location_name']}")
+                    print(f"靈堂位置: {context['data']['tomb_location_name']}")
+
+                except json.JSONDecodeError as e:
+                    print(f"JSON 解析錯誤: {e}")
+                    raise Exception(f"JSON 解析錯誤: {e}")
+
+                # 生成 HTML 內容
+                print("開始生成HTML內容...")
+                html_content = render_to_string('preview_obituary.html', context)
+                
+                # 保存 HTML 文件
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                print(f"HTML文件已保存: {file_path}")
+
+                db.commit()
+                print("資料庫事務已提交")
+                
+                messages.success(request, '訃聞製作成功！')
+                return redirect('obituary_base')
+                
+            except Exception as e:
+                db.rollback()
+                print(f"訃聞製作過程錯誤: {e}")
+                print(f"錯誤詳情: {str(e)}")
+                messages.error(request, '訃聞製作失敗，請稍後再試')
+                return redirect('create_obituary')
+                
+            finally:
+                cursor.close()
+                db.close()
+                
+        except Exception as e:
+            print(f"訃聞製作錯誤: {e}")
+            print(f"錯誤詳情: {str(e)}")
+            messages.error(request, '訃聞製作失敗，請稍後再試')
+            return redirect('create_obituary')
+    
+    return redirect('create_obituary')
+
+@require_POST
+def delete_obituary(request, obituary_id):
+    """刪除訃聞"""
+    if not request.session.get('is_authenticated'):
+        return JsonResponse({'success': False, 'error': '請先登入'})
+        
+    try:
+        db = connection_db()
+        if not db:
+            return JsonResponse({'success': False, 'error': '資料庫連接失敗'})
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            # 獲取訃聞資料和檔案路徑
+            cursor.execute("""
+                SELECT deceased_name, created_at, file_path 
+                FROM obituary 
+                WHERE id = %s
+            """, [obituary_id])
+            obituary_data = cursor.fetchone()
+            
+            if not obituary_data:
+                return JsonResponse({'success': False, 'error': '找不到該訃聞'})
+            
+            # 刪除靜態目錄中的 HTML 文件
+            if obituary_data['file_path']:
+                html_path = os.path.join(settings.OBITUARY_FILES_DIR, obituary_data['file_path'])
+                try:
+                    if os.path.exists(html_path):
+                        os.remove(html_path)
+                        print(f"已刪除HTML文件: {html_path}")
+                except Exception as e:
+                    print(f"刪除HTML文件錯誤: {e}")
+            
+            # 獲取所有相關照片連結
+            cursor.execute("""
+                SELECT photo_link FROM photos WHERE obituary_id = %s
+            """, [obituary_id])
+            photos = cursor.fetchall()
+            
+            # 刪除 Google Drive 中的檔案和資料夾
+            service = get_google_drive_service()
+            if service:
+                try:
+                    # 構建資料夾名稱
+                    folder_name = f"{obituary_data['deceased_name']}_{obituary_data['created_at'].strftime('%Y%m%d_%H%M%S')}"
+                    print(f"尋找資料夾: {folder_name}")
+                    
+                    # 搜尋資料夾
+                    results = service.files().list(
+                        q=f"name='{folder_name}' and mimeType='application/vnd.google-apps.folder' and '{FOLDER_ID}' in parents",
+                        fields="files(id, name)"
+                    ).execute()
+                    
+                    folders = results.get('files', [])
+                    if folders:
+                        folder_id = folders[0]['id']
+                        print(f"找到資料夾 ID: {folder_id}")
+                        
+                        # 刪除資料夾（這會同時刪除資料夾內的所有檔案）
+                        service.files().delete(fileId=folder_id).execute()
+                        print(f"已刪除資料夾: {folder_name}")
+                    else:
+                        print("找不到對應的資料夾，嘗試逐個刪除檔案")
+                        # 如果找不到資料夾，就逐個刪除檔案
+                        for photo in photos:
+                            try:
+                                file_id = photo['photo_link'].split('/')[-2]
+                                service.files().delete(fileId=file_id).execute()
+                                print(f"已刪除檔案 ID: {file_id}")
+                            except Exception as e:
+                                print(f"刪除檔案錯誤: {e}")
+                                
+                except Exception as e:
+                    print(f"Google Drive 操作錯誤: {e}")
+            
+            # 刪除資料庫中的記錄
+            cursor.execute("DELETE FROM photos WHERE obituary_id = %s", [obituary_id])
+            cursor.execute("DELETE FROM obituary WHERE id = %s", [obituary_id])
+            
+            db.commit()
+            print("資料庫記錄已刪除")
+            return JsonResponse({'success': True})
+            
+        except Exception as e:
+            db.rollback()
+            print(f"刪除訃聞錯誤: {e}")
+            return JsonResponse({'success': False, 'error': str(e)})
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"刪除訃聞錯誤: {e}")
+        return JsonResponse({'success': False, 'error': str(e)})
 
 # ... 其他視圖函數保持不變 ...

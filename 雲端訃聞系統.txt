@@ -219,3 +219,4 @@ obituary_base.html
 3. 硬碟使用大小
 4. 加入刪除案件
 
+建立sql訃聞表單
