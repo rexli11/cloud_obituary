@@ -129,10 +129,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -165,3 +165,9 @@ AUTHENTICATION_BACKENDS = [
 
 # 添加新的設置
 OBITUARY_FILES_DIR = os.path.join(BASE_DIR, 'static', 'obituaries')
+
+# 添加 CSRF 設置
+CSRF_COOKIE_SECURE = False  # 在開發環境設為 False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_NAME = 'csrftoken'

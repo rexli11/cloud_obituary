@@ -183,6 +183,46 @@
             background-color: #2A4840;
             color: white;
         }
+
+        .modal-content {
+            border-radius: 15px;
+        }
+
+        .progress {
+            height: 25px;
+            border-radius: 12px;
+        }
+
+        .progress-bar {
+            background-color: #385A52;
+        }
+
+        .modal-header {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .modal-footer {
+            border-top: none;
+            justify-content: center;
+        }
+
+        #progressStatus {
+            font-size: 1.1em;
+            color: #385A52;
+        }
+
+        .modal-footer .btn-primary {
+            background-color: #385A52;
+            border-color: #385A52;
+            padding: 10px 30px;
+            font-size: 1.1em;
+        }
+
+        .modal-footer .btn-primary:hover {
+            background-color: #2A4840;
+            border-color: #2A4840;
+        }
     </style>
 </head>
 <body>
@@ -431,14 +471,7 @@
 
                 <div class="form-group">
                     <label class="form-label">告別式致贈花禮</label>
-                    <textarea class="form-control mb-3" id="flower_gift_description" name="flower_gift_description" rows="3" placeholder="請輸入致贈花 禮的說明"></textarea>
-
-                    <div class="mb-3">
-                        <div class="btn-group" role="group">
-                            {% comment %} <button type="button" class="btn btn-primary" id="send_farewell">送告別式</button> {% endcomment %}
-                            {% comment %} <button type="button" class="btn btn-outline-primary" id="send_tomb">送靈堂</button> {% endcomment %}
-                        </div>
-                    </div>
+                    <textarea class="form-control mb-3" id="flower_gift_description" name="flower_gift_description" rows="3" placeholder="請輸入致贈花禮的說明"></textarea>
 
                     <div class="row" id="flower_gift_list">
                         <!-- 動態添加的花禮項目將在這裡 -->
@@ -458,7 +491,7 @@
                     <div class="form-text text-muted">
                         請輸入有效的 YouTube 網址（例如：https://www.youtube.com/watch?v=xxxx 或 https://youtu.be/xxxx）
                     </div>
-                    <!-- 添加预览区域 -->
+                    <!-- 添加预览域 -->
                     <div id="video-preview" class="mt-3" style="display: none;">
                         <h5>影片預覽</h5>
                         <div class="ratio ratio-16x9">
@@ -499,7 +532,7 @@
 
                 <div class="text-center mt-4">
                     <button type="button" class="btn btn-info btn-submit me-2" style="width: 200px;" onclick="previewObituary()">預覽</button>
-                    <button type="button" class="btn btn-primary btn-submit" style="width: 200px;" onclick="submitForm()">
+                    <button type="button" class="btn btn-primary btn-submit" style="width: 200px; height: 50px;" onclick="submitForm()">
                         製作訃聞
                     </button>
                 </div>
@@ -839,13 +872,17 @@
             flowerItem.className = 'col-md-3 mb-4';
 
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = 'card h-100';
+
+            const cardBody = document.createElement('div');
+            cardBody.className = 'card-body d-flex flex-column';
 
             // 創建圖片預覽容器
             const imgPreviewContainer = document.createElement('div');
-            imgPreviewContainer.className = 'img-preview-container';
+            imgPreviewContainer.className = 'img-preview-container mb-3';
             imgPreviewContainer.style.height = '200px';
             imgPreviewContainer.style.overflow = 'hidden';
+            imgPreviewContainer.style.borderRadius = '8px';
 
             // 創建圖片預覽元素
             const imgPreview = document.createElement('img');
@@ -872,24 +909,23 @@
                 }
             };
 
-            const cardBody = document.createElement('div');
-            cardBody.className = 'card-body';
-
             const nameInput = document.createElement('input');
             nameInput.type = 'text';
             nameInput.className = 'form-control mb-2';
             nameInput.name = `flower_gift_list[${index}][name]`;
             nameInput.placeholder = '花禮名稱';
+            nameInput.style.fontSize = '16px';
 
             const priceInput = document.createElement('input');
             priceInput.type = 'text';
             priceInput.className = 'form-control mb-2';
             priceInput.name = `flower_gift_list[${index}][price]`;
             priceInput.placeholder = '花禮價格';
+            priceInput.style.fontSize = '16px';
 
             // 新增可訂購選項
             const orderableDiv = document.createElement('div');
-            orderableDiv.className = 'form-check mb-2';
+            orderableDiv.className = 'form-check mb-2 mt-auto';
 
             const orderableInput = document.createElement('input');
             orderableInput.type = 'checkbox';
@@ -1111,7 +1147,7 @@
             document.getElementById('tomb_form').style.display = type === 'tomb' ? 'block' : 'none';
         }
 
-        // 在表單提交前添加調���
+        // 在表單提交前添加調試
         document.querySelector('form').addEventListener('submit', function(e) {
             // e.preventDefault(); // 測試時可以取消註釋來防止表單提交
             console.log('表單提交數據:');
@@ -1137,29 +1173,88 @@
             if (confirm('確定要製作訃聞嗎？')) {
                 const form = document.getElementById('obituaryForm');
                 
-                // 添加调试信息
-                console.log('提交表單到：', form.action);
-                console.log('表單方法：', form.method);
-                
-                // 确保所有必填字段都已填写
                 if (form.checkValidity()) {
-                    form.submit();
+                    // 顯示進度視窗
+                    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+                    progressModal.show();
+                    
+                    const progressBar = document.getElementById('progressBar');
+                    const progressStatus = document.getElementById('progressStatus');
+                    const modalFooter = document.getElementById('modalFooter');
+                    
+                    // 模擬進度更新
+                    let progress = 0;
+                    const progressSteps = [
+                        { value: 10, text: '正在處理基本資料...' },
+                        { value: 30, text: '正在上傳照片...' },
+                        { value: 50, text: '正在處理儀式流程...' },
+                        { value: 70, text: '正在生成訃聞頁面...' },
+                        { value: 90, text: '正在完成最後設定...' },
+                        { value: 100, text: '製作完成！' }
+                    ];
+                    
+                    let currentStep = 0;
+                    
+                    const updateProgress = () => {
+                        if (currentStep < progressSteps.length) {
+                            const step = progressSteps[currentStep];
+                            progressBar.style.width = step.value + '%';
+                            progressStatus.textContent = step.text;
+                            currentStep++;
+                            
+                            if (currentStep === progressSteps.length) {
+                                // 最後一步
+                                setTimeout(() => {
+                                    modalFooter.style.display = 'block';
+                                    progressBar.classList.remove('progress-bar-animated');
+                                }, 500);
+                            } else {
+                                setTimeout(updateProgress, 1000);
+                            }
+                        }
+                    };
+                    
+                    // 開始更新進度
+                    updateProgress();
+                    
+                    // 提交表單
+                    const formData = new FormData(form);
+                    fetch('{% url "make_obituary" %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('製作失敗');
+                        }
+                        // 成功後會由進度條完成動畫處理
+                    })
+                    .catch(error => {
+                        progressStatus.textContent = '製作失敗：' + error.message;
+                        progressStatus.style.color = 'red';
+                        modalFooter.style.display = 'block';
+                        progressBar.classList.remove('progress-bar-animated');
+                        progressBar.classList.add('bg-danger');
+                    });
+                    
                 } else {
                     alert('請填寫所有必填欄位');
-                    // 触发浏览器的默认表单验证
                     form.reportValidity();
                 }
             }
         }
         
-        // 防止表单默认提交行为
+        // 防止表單預設提交行為
         document.getElementById('obituaryForm').addEventListener('submit', function(e) {
             if (!e.submitter || !e.submitter.hasAttribute('formaction')) {
                 e.preventDefault();
             }
         });
 
-        // 添加 JavaScript 处理 YouTube 链接
+        // 添加 JavaScript 處理 YouTube 連結
         document.getElementById('memorial_video').addEventListener('input', function() {
             const videoUrl = this.value;
             const videoId = extractYouTubeId(videoUrl);
@@ -1177,14 +1272,33 @@
         function extractYouTubeId(url) {
             if (!url) return null;
             
-            // 处理 youtu.be 格式
+            // 處理 youtu.be 格式
             const shortUrlMatch = url.match(/youtu\.be\/([^?]+)/);
             if (shortUrlMatch) return shortUrlMatch[1];
             
-            // 处理标准 YouTube URL
+            // 處理標準 YouTube URL
             const match = url.match(/[?&]v=([^&#]+)/);
             return match ? match[1] : null;
         }
     </script>
+    <!-- 在 body 標籤結束前添加彈出視窗結構 -->
+    <div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="progressModalLabel">訃聞製作中</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
+                    </div>
+                    <p id="progressStatus" class="text-center mb-0">準備開始製作...</p>
+                </div>
+                <div class="modal-footer" style="display: none;" id="modalFooter">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='{% url 'obituary_base' %}'">確認完成</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

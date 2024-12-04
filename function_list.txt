@@ -1,39 +1,165 @@
 系統功能列表：
 
-1. 用戶管理
-   - 用戶登入/登出
-   - 職員註冊
-   - 職員列表查看
-   - 職員資料修改
-   - 職員啟用/停用
-   - 職員刪除
+1. 資料庫連接功能
+   - connection_db(): 建立資料庫連線
+   - DB_setting.txt: 資料庫設定檔
 
-2. 訃聞製作
-   - 基本資料填寫
-   - 儀式流程設定
-   - 位置資訊設定
-   - 花禮設定
-   - 生活照片上傳
-   - 回憶錄設定
-   - 預覽功能
+2. 用戶管理功能
+   - login_view(): 用戶登入處理
+     * 驗證用戶名密碼
+     * 設置 session 資訊
+     * 權限檢查
+   - logout_view(): 用戶登出處理
+     * 清除 session
+     * 重導向至首頁
+   - home_view(): 首頁顯示
+     * 權限檢查
+     * 功能選單顯示
+   - register(): 職員註冊
+     * 表單驗證
+     * 密碼加密
+     * 權限設置
+   - preview_employee(): 查看職員列表
+     * 列表顯示
+     * 狀態標記
+   - toggle_active(): 變更用戶啟用狀態
+   - delete_employee(): 刪除用戶
+   - check_permissions(): 權限檢查（舊版）
 
-3. 案件管理
-   - 案件列表查看
-   - 案件資料修改
-   - 案件狀態更新
+3. 訃聞相關功能
+   - obituary_base(): 訃聞製作基礎頁面
+     * 列表顯示
+     * 排序功能
+   - create_obituary(): 創建新訃聞
+     * 表單驗證
+     * 資料預處理
+   - preview_obituary(): 預覽訃聞
+     * 資料整理
+     * 照片處理
+     * 模板渲染
+   - make_obituary(): 製作訃聞並上傳照片
+     * 資料處理
+     * 照片上傳
+     * HTML 生成
+     * 檔案儲存
+   - view_obituary(): 查看訃聞頁面
+     * 資料讀取
+     * 權限檢查
+   - delete_obituary(): 刪除訃聞
+     * 檔案刪除
+     * 資料清理
+   - search_obituary(): 搜尋訃聞
 
-4. 購物車功能
-   - 花禮加入購物車
-   - 購物車管理
-   - 訂單處理
+4. Google Drive 相關功能
+   - get_google_drive_service(): 初始化 API 服務
+   - upload_to_drive(): 上傳檔案
+     * 檔案處理
+     * 權限設置
+     * 連結生成
+   - extract_youtube_id(): 提取視頻 ID
+     * 多格式支援
+     * 錯誤處理
 
-5. 權限管理
-   - 五級權限系統
-   - 權限驗證
-   - 功能訪問控制
+5. 購物車功能
+   - buy_car(): 購物車頁面
+   - JavaScript 功能：
+     * addToCart(): 添加商品
+     * updateCartCount(): 更新數量
+     * openCart(): 開啟購物車
+     * localStorage 管理
 
-6. 其他功能
-   - 背景音樂控制
-   - 分享功能
-   - 回到頂部
-   - 地圖顯示
+6. 案件管理功能
+   - case_management(): 案件管理頁面
+     * 列表顯示
+     * 狀態更新
+     * 資料編輯
+
+7. 前端互動功能 (JavaScript)
+   A. 照片預覽與放大
+      * showFullscreen(): 全螢幕預覽
+      * hideFullscreen(): 隱藏預覽
+      * switchPreview(): 切換訃聞照片
+      * switchLifePhoto(): 切換生活照片
+      * 動畫效果
+      * 觸控支援
+
+   B. 音樂控制
+      * toggleMusic(): 控制播放
+      * 自動播放處理
+      * 錯誤處理
+      
+   C. 分享功能
+      * shareContent(): 分享內容
+      * toggleShare(): 切換選項
+      * 社群媒體整合
+      * LINE 分享
+      * Facebook 分享
+
+   D. 頁面導航
+      * scrollToTop(): 回頂部
+      * toggleTraffic(): 交通資訊
+      * 響應式設計
+      * 動畫效果
+
+8. 權限控制系統
+   A. 權限等級
+      * 0: 超級管理員
+      * 1: 高級管理員
+      * 2: 案件管理員
+      * 3: 訃聞製作員
+      * 4: 一般用戶
+
+   B. 權限驗證機制
+      * Session 檢查
+      * 路由保護
+      * 功能限制
+
+9. 資料處理功能
+   A. 照片處理
+      * 往生者照片
+      * 訃聞正反面照片
+      * 生活照片
+      * 花禮照片
+      * 圖片壓縮
+      * 格式轉換
+   
+   B. 資料轉換
+      * convert_drive_link(): Drive 連結轉換
+      * base64 編碼處理
+      * JSON 處理
+      * 日期格式轉換
+
+10. 系統整合功能
+    A. Google 服務整合
+       * Drive API
+       * Maps API
+       * YouTube 嵌入
+    
+    B. 外部服務整合
+       * 社群媒體分享
+       * 地圖服務
+       * 第三方支付（預留）
+
+11. 安全性功能
+    - SQL 注入防護
+    - XSS 防護
+    - CSRF 防護
+    - 檔案上傳驗證
+    - 權限驗證
+
+12. 使用者介面功能
+    A. 響應式設計
+       * 桌面版面
+       * 平板版面
+       * 手機版面
+    
+    B. 主題設定
+       * 字體選擇
+       * 背景設定
+       * 版面配置
+
+13. 舊版/棄用功能（參考用）
+    - check_permissions(): 舊版權限檢查
+    - 舊版檔案上傳機制
+    - 舊版使用者介面
+    - 舊版資料結構

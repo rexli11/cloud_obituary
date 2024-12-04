@@ -22,4 +22,6 @@ urlpatterns = [
     path('make_obituary/', views.make_obituary, name='make_obituary'),
     path('obituary/view/<int:obituary_id>/', views.view_obituary, name='view_obituary'),
     path('obituary/delete/<int:obituary_id>/', views.delete_obituary, name='delete_obituary'),
+    path('obituary/edit/<int:obituary_id>/', views.edit_obituary, name='edit_obituary'),
+    path('obituary/count/<int:obituary_id>/', views.count_obituary_click, name='count_obituary_click'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 

@@ -1,40 +1,32 @@
-{% load static %}
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>訃聞預覽</title>
-    {% comment %} <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon"> {% endcomment %}
+    <title>fdgdsfg - 楊子佛教禮儀雲端訃聞系統</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         @font-face {
             font-family: '標楷體';
-            src: url('{% static "fonts/kaiti.ttf" %}') format('truetype');
+            src: url('/static/fonts/kaiti.ttf') format('truetype');
         }
         
         @font-face {
             font-family: '華康仿宋體';
-            src: url('{% static "fonts/fangsong.ttf" %}') format('truetype');
+            src: url('/static/fonts/fangsong.ttf') format('truetype');
         }
 
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            {% comment %} background-color: #1668dc; {% endcomment %}
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體', 'KaiTi', '楷體-繁'{% else %}'華康仿宋體', 'FangSong', '仿宋-繁'{% endif %}, sans-serif;
+            
+            font-family: '華康仿宋體', 'FangSong', '仿宋-繁', sans-serif;
         }
         
-        {% comment %} .golden-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            background-color: #D4AF37;  /* 金色 */
-            z-index: 2;
-        } {% endcomment %}
+        
         
         .preview-container {
             width: 100%;
@@ -76,7 +68,7 @@
             font-weight: bold;
             margin-bottom: 30px;
             color: #000;
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+            font-family: '華康仿宋體';
         }
         
         .photo-container {
@@ -125,7 +117,7 @@
             font-size: 24px;
             font-weight: bold;
             color: #000;
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+            font-family: '華康仿宋體';
         }
         
         .ceremony-container {
@@ -136,11 +128,11 @@
             color: #000;
             font-size: 20px;
             text-align: left;
-            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
+            font-family: '華康仿宋體';
         }
         
         .ceremony-process-container {
-            {% comment %} background-color: rgba(255, 255, 255, 0.9); {% endcomment %}
+            
             background-color: #fff;
             border-radius: 15px;
             padding: 30px;
@@ -382,7 +374,7 @@
             margin: 0;
         }
 
-        {% comment %} 儀式流程交互顏色調整 {% endcomment %}
+        
         .ceremony-list li {
             display: flex;
             align-items: center;
@@ -397,9 +389,7 @@
             background-color: #fff;
         }
         
-        {% comment %} .ceremony-list li:hover {
-            background-color: #e2e6ea;
-        } {% endcomment %}
+        
 
         .ceremony-list li span {
             width: 80px;
@@ -791,7 +781,7 @@
         .top-btn {
             background-color: #fff;
             color: #4a76cf;
-            {% comment %} display: none; /* 初始隱藏 */ {% endcomment %}
+            
         }
 
         .flower-gift-description {
@@ -1112,9 +1102,7 @@
             line-height: 1.5;
         }
 
-        {% comment %} .time-block:nth-child(odd) {
-            background-color: #B9AD9A;
-        } {% endcomment %}
+        
 
         /* 內容方塊樣式 */
         .content-block {
@@ -1337,7 +1325,7 @@
             background-color: #385A52;
             border-radius: 10%;
             display: flex;
-            flex-direction: column;  /* 改為��直排列 */
+            flex-direction: column;  /* 改為垂直排列 */
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -1431,128 +1419,55 @@
             }
         }
     </style>
-    <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
 <body>
-    <div id="obituary-data" 
-         data-obituary-id="{{ obituary.id }}"
-         style="display: none;">
-    </div>
     <div class="preview-container">
-        {% comment %} <div class="golden-bar"></div> {% endcomment %}
-        {% if data.desktop_background %}
+        
+        
             <img 
                 class="background-image" 
-                src="{% static 'cloud_obituary/desktop/' %}{{ data.desktop_background }}.jpg" 
+                src="/static/cloud_obituary/desktop/1.jpg" 
                 alt="背景"
                 onload="this.classList.add('loaded')"
             >
-        {% endif %}
+        
         <div class="content-wrapper">
             <div class="preview-content">
                 <div class="title bottom-title">
                     <div class="container">
                         <div class="top uk-flex uk-flex-center">
-                            <img src="{% static 'images/title-left.svg' %}" alt="" class="line">
-                            {% if data.area_selection == '1' %}
-                                <img class="title-icon" src="{% static 'images/title-icon-2.png' %}" alt="" 
+                            <img src="/static/images/title-left.svg" alt="" class="line">
+                            
+                                <img class="title-icon" src="/static/images/title-icon.png" alt="" 
                                      style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                            {% else %}
-                                <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
-                                     style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                            {% endif %}
-                            <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
+                            
+                            <img src="/static/images/title-right.svg" alt="" class="line">
                         </div>
                     </div>
                 </div>
 
-                <div class="deceased-name">{{ data.deceased_name }}</div>
+                <div class="deceased-name">fdgdsfg</div>
                 <div class="photo-container">
-                    {% if data.deceased_photo %}
-                        <img 
-                            class="deceased-photo" 
-                            src="{{ data.deceased_photo }}" 
-                            alt="個人照片" 
-                            onerror="console.error('照片加載失敗'); this.style.display='none';"
-                            onload="console.log('照片加載成功');"
-                        >
-                    {% endif %}
+                    
                 </div>
 
                 <!-- 生卒年容器 -->
-                <div class="dates-container" style="margin-top: {% if not data.birth_date and not data.death_date %}0{% else %}20px{% endif %};">
-                    {% if not data.hide_birth_date and data.birth_date %}
-                        <div class="date-item">
-                            生於 {{ data.birth_date }}
-                        </div>
-                    {% endif %}
+                <div class="dates-container" style="margin-top: 0;">
                     
-                    {% if not data.hide_death_date and data.death_date %}
-                        <div class="date-item">
-                            辭世 {{ data.death_date }}
-                        </div>
-                    {% endif %}
+                    
+                    
                 </div>
                 <div class="ceremony-divider"></div>
 
                 <!-- 告別式說明容器 -->
-                {% if data.ceremony_details %}
+                
                     <div class="ceremony-container">
-                        {{ data.ceremony_details|linebreaks }}
+                        <p>dfgdfg</p>
                     </div>
-                {% endif %}
+                
 
                 <!-- 儀式流程容器 -->
-                {% if data.ceremony_items %}
-                <div class="ceremony-process-container">
-                    <div class="ceremony-process-content">
-                        <div class="head">
-                            <h2>告別式流程</h2>
-                            <div class="ceremony-divider"></div>
-                        </div>
-                        
-                        <div class="ceremony-content-wrapper">
-                            <!-- 左側儀式流程 -->
-                            <div class="ceremony-left-section">
-                                <div class="ceremony-list">
-                                    {% for item in data.ceremony_items %}
-                                    <div class="ceremony-item">
-                                        <div class="time-block">{{ item.time }}</div>
-                                        <div class="content-block">{{ item.content }}</div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            
-                            <!-- 右側訃聞預覽 -->
-                            <div class="ceremony-right-section">
-                                {% if data.obituary_front or data.obituary_back %}
-                                <div class="obituary-preview-container">
-                                    <div class="obituary-preview">
-                                        <!-- 預設顯示正面 -->
-                                        <img src="{{ data.obituary_front }}" alt="訃聞預覽" onclick="showFullscreen(this.src)">
-                                    </div>
-                                    <div class="obituary-thumbnails">
-                                        {% if data.obituary_front %}
-                                        <div class="obituary-thumbnail active" onclick="switchPreview(this, '{{ data.obituary_front }}')">
-                                            <img src="{{ data.obituary_front }}" alt="訃聞正面">
-                                            <span>正面</span>
-                                        </div>
-                                        {% endif %}
-                                        {% if data.obituary_back %}
-                                        <div class="obituary-thumbnail" onclick="switchPreview(this, '{{ data.obituary_back }}')">
-                                            <img src="{{ data.obituary_back }}" alt="訃聞背面">
-                                            <span>背面</span>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                
 
                 <!-- 位置資訊容器 -->
                 <div class="ceremony-process-container location-container">
@@ -1573,22 +1488,22 @@
                                     <ul class="info-list">
                                         <li>
                                             <span>會場名稱：</span>
-                                            <p>{{ data.location_name }}</p>
+                                            <p>dgdf</p>
                                         </li>
                                         <li>
                                             <span>會場地址：</span>
-                                            <p>{{ data.location_address }}</p>
+                                            <p>gd</p>
                                         </li>
-                                        {% if data.location_area %}
+                                        
                                         <li>
                                             <span>廳別資訊：</span>
-                                            <p>{{ data.location_area }}</p>
+                                            <p>sfg</p>
                                         </li>
                                         <li>
                                             <span>交通資訊：</span>
                                         </li>
-                                        {% endif %}
-                                        {% if data.traffic_info %}
+                                        
+                                        
                                         <li>
                                             <div class="traffic-info-container">
                                                 <div class="traffic-header" onclick="toggleTraffic(this)">
@@ -1596,52 +1511,30 @@
                                                 </div>
                                                 <div class="traffic-content collapsed">
                                                     <div class="traffic-sections">
-                                                        {{ data.traffic_info|linebreaks }}
+                                                        <p>dfg</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </li>
-                                        {% endif %}
+                                        
                                     </ul>
                                 </div>
                                 
                                 <!-- 添加靈堂資訊 -->
                                 <div class="loca-info" id="tomb-info" style="display: none;">
-                                    {% comment %} <p class="venue-name">{{ data.tomb_location_name }}</p> {% endcomment %}
-                                    {% comment %} <div class="ceremony-divider"></div> {% endcomment %}
+                                    
+                                    
                                     <ul class="info-list">
                                         <li>
                                             <span>靈堂名稱：</span>
-                                            <p>{{ data.tomb_location_name }}</p>
+                                            <p></p>
                                         </li>
                                         <li>
                                             <span>靈堂地址：</span>
-                                            <p>{{ data.tomb_location_address }}</p>
+                                            <p></p>
                                         </li>
-                                        {% if data.tomb_location_area %}
-                                        <li>
-                                            <span>靈堂廳別：</span>
-                                            <p>{{ data.tomb_location_area }}</p>
-                                        </li>
-                                        <li>
-                                            <span>交通訊：</span>
-                                        </li>
-                                        {% endif %}
-                                        {% if data.tomb_traffic_info %}
-                                        <li>
-                                            {% comment %} <span>交通資訊：</span> {% endcomment %}
-                                            <div class="traffic-info-container">
-                                                <div class="traffic-header" onclick="toggleTraffic(this)">
-                                                    <div class="toggle-icon">詳細資訊</div>
-                                                </div>
-                                                <div class="traffic-content collapsed">
-                                                    <div class="traffic-sections">
-                                                        {{ data.tomb_traffic_info|linebreaks }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        {% endif %}
+                                        
+                                        
                                     </ul>
                                 </div>
                             </div>
@@ -1664,56 +1557,23 @@
                         </div>
 
                         <!-- 花禮說明 -->
-                        {% if data.flower_gift_description %}
+                        
                         <div class="flower-gift-description">
-                            {{ data.flower_gift_description|linebreaks }}
+                            <p>dfg</p>
                         </div>
-                        {% endif %}
+                        
 
                         <!-- 花禮列表 -->
                         <div class="flower-gift-list">
                             <!-- 添加調試信息 -->
                             <div style="display: none;">
                                 Debug info:
-                                Total gifts: {{ data.flower_gifts|length }}
-                                {% for gift in data.flower_gifts %}
-                                    Gift {{ forloop.counter }}:
-                                    Name: {{ gift.name }}
-                                    Price: {{ gift.price }}
-                                    Has image: {% if gift.image %}Yes{% else %}No{% endif %}
-                                {% endfor %}
+                                Total gifts: 0
+                                
                             </div>
                             
                             <div class="row">
-                                {% for gift in data.flower_gifts %}
-                                    <div class="col-md-3 mb-4">
-                                        <div class="flower-gift-item">
-                                            {% if gift.image %}
-                                            <img src="{{ gift.image }}" alt="花禮圖片" class="gift-image" onclick="showFullscreen('{{ gift.image }}')"
-                                                 onerror="console.error('花禮圖片載入失敗:', this.src);">
-                                            {% endif %}
-                                            <div class="gift-info">
-                                                <h5>{{ gift.name|default:'無名稱' }}</h5>
-                                                <p>NT$ {{ gift.price|default:'無價格' }}</p>
-                                                <div class="order-button">
-                                                    {% if gift.orderable %}
-                                                        <button class="btn btn-primary btn-sm" 
-                                                                onclick="addToCart('{{ gift.name }}', '{{ gift.price }}', '{{ gift.image }}')">
-                                                            加入購物車
-                                                        </button>
-                                                    {% else %}
-                                                        <button class="btn btn-secondary btn-sm" onclick="contactService()">
-                                                            無法訂購 請聯繫客服
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% if forloop.counter|divisibleby:4 and not forloop.last %}
-                                        </div><div class="row">
-                                    {% endif %}
-                                {% endfor %}
+                                
                             </div>
                         </div>
                     </div>
@@ -1728,54 +1588,17 @@
                         </div>
 
                         <div class="photos-section">
-                            {% if data.life_photos %}
-                                <div class="life-photos-preview">
-                                    <div class="current-photo" onclick="showFullscreen(this.querySelector('img').src)">
-                                        <img src="{{ data.life_photos.0 }}" alt="生活照預覽">
-                                    </div>
-                                    
-                                    <div class="life-photos-thumbnails">
-                                        {% for photo in data.life_photos %}
-                                            <div class="life-photo-thumbnail {% if forloop.first %}active{% endif %}" 
-                                                 onclick="switchLifePhoto(this, '{{ photo }}')">
-                                                <img src="{{ photo }}" alt="生活照">
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            {% else %}
+                            
                                 <div class="no-photos-message">
                                     尚未上傳生活照
                                 </div>
-                            {% endif %}
+                            
                         </div>
                     </div>
                 </div>
 
                 <!-- 回憶錄卡片 -->
-                {% if data.memorial_video %}
-                <div class="ceremony-process-container">
-                    <div class="ceremony-process-content">
-                        <div class="head">
-                            <h2>{{ data.deceased_name }}回憶錄</h2>
-                            <div class="ceremony-divider"></div>
-                        </div>
-
-                        <div class="video-section">
-                            <div class="video-container">
-                                <iframe 
-                                    width="560" 
-                                    height="315" 
-                                    src="https://www.youtube.com/embed/{{ data.memorial_video }}" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowfullscreen>
-                                </iframe>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                
             </div>
         </div>
     </div>
@@ -1784,15 +1607,12 @@
     <div class="title bottom-title">
         <div class="container">
             <div class="top uk-flex uk-flex-center">
-                <img src="{% static 'images/title-left.svg' %}" alt="" class="line">
-                {% if data.area_selection == '1' %}
-                    <img class="title-icon" src="{% static 'images/title-icon-2.png' %}" alt="" 
+                <img src="/static/images/title-left.svg" alt="" class="line">
+                
+                    <img class="title-icon" src="/static/images/title-icon.png" alt="" 
                          style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                {% else %}
-                    <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
-                         style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                {% endif %}
-                <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
+                
+                <img src="/static/images/title-right.svg" alt="" class="line">
             </div>
             <h1 style="color: #385A52;">楊子用心 · 家屬安心</h1>
         </div>
@@ -1918,7 +1738,7 @@
         <button class="float-btn music-btn" onclick="toggleMusic()">
             <i class="fas fa-music"></i>
             <audio id="background_music" loop>
-                <source src="{{ data.background_music }}" type="audio/mpeg">
+                <source src="/static/audio/1.m4a" type="audio/mpeg">
             </audio>
         </button>
         
@@ -2048,7 +1868,7 @@
             return;
         }
         // 跳轉到購物車頁面
-        window.location.href = "{% url 'buy_car' %}";
+        window.location.href = "/buy_car/";
     }
     
     // 添加到購物車
@@ -2086,34 +1906,28 @@
                 <!-- 承辦人員資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        {% if data.area_selection == '1' %}
-                            <img src="{% static 'images/title-icon-2.png' %}" alt="承辦人員所屬公司">
-                        {% else %}
-                            <img src="{% static 'images/agent_logo.jpg' %}" alt="承辦人員所屬公司">
-                        {% endif %}
+                        
+                            <img src="/static/images/agent_logo.jpg" alt="承辦人員所屬公司">
+                        
                     </div>
                     <div class="info">
                         <h3><a>禮儀師資訊</a></h3>
-                        <p><span>禮儀師：</span>{{ data.agent_name }}</p>
-                        <p><span>聯絡電話：</span><a href="tel:{{ data.agent_phone }}">{{ data.agent_phone }}</a></p>
+                        <p><span>禮儀師：</span>dfg</p>
+                        <p><span>聯絡電話：</span><a href="tel:0916800633">0916800633</a></p>
                     </div>
                 </div>
                 <!-- 禮儀公司資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        {% if data.area_selection == '1' %}
-                            <img src="{% static 'images/title-icon-2.png' %}" alt="楊子佛教Logo">
-                        {% else %}
-                            <img src="{% static 'images/logo.jpg' %}" alt="楊子佛教Logo">
-                        {% endif %}
+                        
+                            <img src="/static/images/logo.jpg" alt="楊子佛教Logo">
+                        
                     </div>
                     <div class="info">
                         <h3><a href="https://www.leniency.com.tw/" target="_blank">
-                            {% if data.area_selection == '1' %}
-                                楊子北區服務處
-                            {% else %}
+                            
                                 楊子佛教禮儀(股)公司
-                            {% endif %}
+                            
                         </a></h3>
                         <p><span>全台24H客服：</span>0800-365-108</p>
                         <p><span>訂  花  專  線</span><a href="tel:0965-606-100">0965-606-100</a></p>
@@ -2130,60 +1944,21 @@
         <a> | </a>
         <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> 楊子佛教Youtube</a>
         <a> | </a>
-        {% if data.area_selection == '1' %}
-            <a href="https://maps.app.goo.gl/apuxVC9fTTyGRWQL8" target="_blank"> 留下您的Google評論</a>
-        {% else %}
+        
             <a href="https://maps.app.goo.gl/cQEdZ9SVdXe9d4zm7" target="_blank"> 留下您的Google評論</a>
-        {% endif %}
+        
     </div>
     <div class="copyright">
-        © {% now "Y" %} 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
+        © 2024 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
     </div>
     <div class="shopping-cart-btn" onclick="openCart()">
         <i class="fas fa-shopping-cart"></i>
         <span class="cart-count" id="cartCount">0</span>
-        <span>花禮物車</span>
+        <span>花禮購物車</span>
     </div>
     <div class="fullscreen-preview" onclick="hideFullscreen()">
         <span class="close-preview">&times;</span>
         <img src="" alt="預覽圖片">
     </div>
-
-    <!-- 在頁面載入時添加點擊計數 -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const obituaryId = document.getElementById('obituary-data').getAttribute('data-obituary-id');
-        
-        if (obituaryId) {
-            console.log('準備發送計數請求，訃聞ID:', obituaryId);
-            
-            fetch(`/obituary/count/${obituaryId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error('Response status:', response.status);
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    console.log('訪數更新成功:', data.new_count);
-                } else {
-                    console.error('計數更新失敗:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('計數請求錯誤:', error.message);
-            });
-        } else {
-            console.warn('無法獲取訃聞ID');
-        }
-    });
-    </script>
 </body>
 </html>
