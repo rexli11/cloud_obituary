@@ -1,27 +1,29 @@
-yz_admin
-27461271yzadmin
+資料庫帳密 : 
+	yz_admin
+	27461271yzadmin
 
 
-路徑 : 
-base(base.html) 
-	雲端案件管理(暫時未製作)
-	雲端訃聞製作
-		Login
-			雲端訃聞製作首頁(obituary_base.html)
-	數據分析儀表板
-		連結至社群數據分析儀表板
+網頁路徑 : 
+	base(base.html) 
+		雲端案件管理(暫時未製作)
+		雲端訃聞製作
+			Login
+				雲端訃聞製作首頁(obituary_base.html)
+		數據分析儀表板
+			連結至社群數據分析儀表板
 
-公司super user
-account : rexli
-email : rexli01010629@gmail.com
-password : aaa111
+	super user
+	account : rexli
+	email : rexli01010629@gmail.com
+	password : analytics0101
+	password : aaa111
 
-
-title icon : 60 * 40
+標籤圖檔
+	title icon : 60 * 40
 
 資料庫遷移
-python manage.py makemigrations
-python manage.py migrate
+	python manage.py makemigrations
+	python manage.py migrate
 
 雲端訃聞製作首頁 - (obituary_base.html)
 	- 列出所有雲端訃聞 : 訃聞搜尋結果頁面(obituary_search.html)
@@ -56,6 +58,10 @@ youtube範本 : https://www.youtube.com/watch?v=OxGjV29kL1Q&t=8s
 	9. 地區選擇，訃聞相關欄位要變換北部或中部資訊
 	10. **是否要設定一個帳密權限管理頁**
 	11. 購物車顯示調整 - ok
+	12. 各訃聞需要加上記數器，得知總共被點擊幾次
+	13. session需儲存，關閉頁面時需登出
+	14. 預覽時點擊正面預覽正面，點擊背面預覽背面
+	15. 關閉頁面後購物車清空不紀錄儲存
 
 要調整的
 	obituahry_maker.html - ok
@@ -107,82 +113,13 @@ Geocoding API
 在 obituary_maker.html 中更新 API 金鑰：
 
 				
-				
-行銷部要提供的資料
-1. 裝飾線(.SVG檔案)
-
-<div class="mb-3">
-                    <label class="form-label">花禮送至</label>
-                    <div class="delivery-options">
-                        <div class="delivery-option" data-value="tomb" onclick="selectDelivery(this)">送靈堂</div>
-                        <div class="delivery-option" data-value="farewell" onclick="selectDelivery(this)">送告別式</div>
-                        <div class="delivery-option" data-value="both" onclick="selectDelivery(this)">均送</div>
-                    </div>
-                    <input type="hidden" name="delivery_option" id="deliveryOption" required>
-                </div>
-				
-<div class="loca-info" id="farewell-info">
-                                    <ul class="info-list">
-                                        <li>
-                                            <span>會場名稱：</span>
-                                            <p>{{ data.location_name }}</p>
-                                        </li>
-                                        <li>
-                                            <span>會場地址：</span>
-                                            <p>{{ data.location_address }}</p>
-                                        </li>
-										
-DATABASES = {
-    'default': {
-        'ENGINE': 'mysql.connector.django',
-        'NAME': 'mydatabase',
-        'USER': 'rexli',
-        'PASSWORD': 'abc000',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'autocommit': True,
-        },
-    }
-}
-
-以下事項請協助調整與實現
-1. views.py中的login_view需要取的db(yz_cloud)中users表中的username、password、user_id以及使用user_id取得permissions表中的admin、normal_user、obituary、case_user的值
-2. 進入base.html前，需要先彈出式視窗進行login.html >> 驗證權限 >> 進入base.html
-3. views.py中請新增實現驗證權限函式
-	若permission_type的值為 : 0，則所有頁面均可進入
-	若permission_type的值僅為 : 1 - 第一級權限，可進入"進入雲端案件管理"、"進入雲端訃聞製作"、"進入數據分析儀表板"頁
-	若permission_type的值僅為 : 2 - 第二級權限，可進入"進入雲端案件管理"頁、"進入數據分析儀表板"頁
-	若permission_type的值僅為 : 3 - 第三級權限，可進入"進入雲端訃聞製作"頁、"進入數據分析儀表板"頁
-	若permission_type的值僅為 : 4 - 第四級權限，可進入"進入數據分析儀表板"頁
-4. 請勿更動其他功能
+	
 	
 0 - 管理者，全部權限，所有頁面均可進入
 1 - 第一級權限，可進入"進入雲端案件管理"、"進入雲端訃聞製作"、"進入數據分析儀表板"頁
 2 - 第二級權限，可進入"進入雲端案件管理"頁、"進入數據分析儀表板"頁
 3 - 第三級權限，可進入"進入雲端訃聞製作"頁、"進入數據分析儀表板"頁
 4 - 第四級權限，可進入"進入數據分析儀表板"頁
-
-register要調整
-
-
-register.html頁面提交submit後，請實現views.py中register以下實現
-1. 連結資料庫
-2. 將username、password、realname、phone、email、department、title、company、is_active、is_superuser寫入至db中users表單
-3. 將permission_type寫入至db中permissions表單中
-4. 彈出式視窗顯示寫入成功與否，以及寫入資訊
-5. 關閉資料庫、cursor
-6. 請勿更動其他功能
-
-
-
-test2
-ttt222
-
-lowuser
-aaa222
-
-測試註冊
 
 
 1. 服務區 : str
@@ -207,16 +144,15 @@ aaa222
 20. 承辦人員電話
 
 
-雲端訃聞
-1. 文字、日期、授權格式 : 儲存於Mysql
-2. 浮動圖片 : 儲存於雲端硬碟
-3. 音樂、背景 : 儲存於應用程式中
+@echo off
+set BackupFile=C:\mysql_backup
+set userId=root
+set UserPwd=your_password
+set DBName=your_database_name
+set "Ymd=%date:~0,4%%date:~5,2%%date:~8,2%"
 
-obituary_base.html
-列表中要添加
-1. 哪個公司製作的
-2. 製作時間
-3. 硬碟使用大小
-4. 加入刪除案件
+:: 刪除舊有備份檔
+forfiles /p %BackupFile% /m backup_*.sql -d -3 /c "cmd /c del /f @path"
 
-建立sql訃聞表單
+:: 執行備份指令
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump" --opt --user=%userId% --password=%UserPwd% %DBName% > "%BackupFile%\backup_%Ymd%.sql"

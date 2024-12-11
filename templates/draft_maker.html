@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="title-container">
+        <h2>編輯草稿訃聞</h2>
+        <div class="button-group">
+            <a href="{% url 'draft_obituaries' %}" class="nav-btn">返回草稿列表</a>
+            <a href="{% url 'home' %}" class="nav-btn">回首頁</a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" action="{% url 'update_obituary' %}" enctype="multipart/form-data" id="obituaryForm">
+            {% csrf_token %}
+            <input type="hidden" name="is_draft" value="true">
+            <input type="hidden" name="obituary_id" value="{{ draft.id }}">
+
+            <!-- 基本資料 -->
+            <div class="form-group">
+                <label for="area_selection" class="form-label">服務區域</label>
+                <select class="form-control" id="area_selection" name="area_selection">
+                    <option value="1" {% if draft.service_area == '1' %}selected{% endif %}>北部服務處</option>
+                    <option value="2" {% if draft.service_area == '2' %}selected{% endif %}>中部服務處</option>
+                    <option value="3" {% if draft.service_area == '3' %}selected{% endif %}>南部服務處</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="deceased_name" class="form-label">往生者姓名</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="deceased_name" 
+                       name="deceased_name" 
+                       value="{{ draft.deceased_name }}"
+                       placeholder="請輸入往生者姓名">
+            </div>
+
+            <!-- ... 其他表單欄位，從 obituary_maker.html 複製過來並加上 value="{{ draft.xxx }}" ... -->
+
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-info btn-submit me-2" style="width: 200px;" onclick="previewObituary()">預覽</button>
+                <button type="button" class="btn btn-primary btn-submit" style="width: 200px;" onclick="submitForm()">儲存修改</button>
+                <button type="button" class="btn btn-secondary btn-submit" style="width: 200px;" onclick="window.location.href='{% url 'draft_obituaries' %}'">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="progressModalLabel">儲存中...</h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
+                </div>
+                <p id="progressStatus" class="text-center mb-0">準備儲存...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 填充表單數據
+    const draft = {
+        service_area: '{{ draft.service_area }}',
+        deceased_name: '{{ draft.deceased_name }}',
+        birth_date: '{{ draft.birth_date|date:"Y-m-d" }}',
+        death_date: '{{ draft.death_date|date:"Y-m-d" }}',
+        // ... 其他數據
+    };
+
+    // 填充表單
+    Object.keys(draft).forEach(key => {
+        const element = document.getElementById(key);
+        if (element) {
+            element.value = draft[key];
+        }
+    });
+});
+
+function submitForm() {
+    const form = document.getElementById('obituaryForm');
+    if (form.checkValidity()) {
+        const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+        progressModal.show();
+        
+        const formData = new FormData(form);
+        formData.append('is_draft', 'true');
+        
+        fetch('{% url "update_obituary" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('progressStatus').textContent = '儲存成功！';
+                document.getElementById('progressBar').style.width = '100%';
+                setTimeout(() => {
+                    window.location.href = '{% url "draft_obituaries" %}';
+                }, 1000);
+            } else {
+                throw new Error(data.error || '儲存失敗');
+            }
+        })
+        .catch(error => {
+            document.getElementById('progressStatus').textContent = '儲存失敗：' + error.message;
+            document.getElementById('progressStatus').style.color = 'red';
+            document.getElementById('progressBar').classList.add('bg-danger');
+        });
+    } else {
+        form.reportValidity();
+    }
+}
+</script>
+{% endblock %} 
