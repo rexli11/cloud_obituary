@@ -1,0 +1,494 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XX佛教禮儀雲端系統 - 訃聞列表</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <style>
+        body {
+            background-color: white;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .logo-container {
+            background-color: white;
+            width: 350px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            padding-left: 30px;
+            position: relative;
+            margin-left: calc((100% - 1200px) / 2);
+        }
+        
+        .logo-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .overlay-titlea {
+            background-color: #E5E5E5;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            min-height: 150px;
+        }
+        
+        .overlay-titlea .container {
+            position: relative;
+            z-index: 2;
+            padding: 30px 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .overlay-titlea h1 {
+            font-size: 24px;
+            margin: 0;
+            width: 100%;
+            text-align: center;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .overlay-titlea h3 {
+            font-size: 20px;
+            margin: 0 0 15px 0;
+            width: 100%;
+            text-align: center;
+            color: #666;
+            letter-spacing: 0.5em;
+        }
+        
+        .overlay-titlea .breadcrumb {
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            font-size: 1.5rem;
+            display: flex;
+            gap: 10px;
+            margin-left: 20px;
+        }
+        
+        .overlay-titlea .breadcrumb-item {
+            color: #666;
+        }
+        
+        .overlay-titlea .breadcrumb-item a {
+            color: #666;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+        
+        .overlay-titlea .breadcrumb-item.active {
+            color: #333;
+        }
+        
+        .overlay-titlea .breadcrumb-item + .breadcrumb-item::before {
+            content: "/";
+            color: #666;
+        }
+        
+        .background-image {
+            position: absolute;
+            right: 200px;
+            bottom: 10px;
+            height: 120px;
+            width: auto;
+            opacity: 0.5;
+            z-index: 1;
+            object-fit: cover;
+            height: 38%;
+        }
+        
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .control-panel {
+            display: grid;
+            grid-template-columns: 200px 1fr 120px;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .form-select, .form-control {
+            height: 50px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            {% comment %} background-color: white; {% endcomment %}
+            font-size: 1.2rem;
+        }
+        
+        .btn-conform {
+            background-color: #385A52;
+            color: white;
+            border: none;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+
+        .btn-conform:hover {
+            color: white;
+            background-color: #B9AD9A;
+        }
+        
+        .obituary-table {
+            width: 90%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin: 20px auto 0;
+            font-size: 1.6rem;
+        }
+        
+        .obituary-table tr {
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
+        }
+        
+        .obituary-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .obituary-table td {
+            padding: 12px 8px;
+            vertical-align: middle;
+            font-size: 1.6rem;
+        }
+        
+        .service-area {
+            width: 100px;
+            color: #385A52;
+            font-weight: bold;
+            white-space: nowrap;
+            font-size: 1.6rem;
+            {% comment %} padding-left: 200px; {% endcomment %}
+        }
+        
+        .deceased-name-cell {
+            padding-left: 0;
+            {% comment %} padding-right: 100px; {% endcomment %}
+        }
+        
+        .action-cell {
+            width: 250px;
+            padding-right: 0;
+            font-size: 1.6rem;
+        }
+
+        .action-cell:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .deceased-name {
+            color: #385A52;
+            text-decoration: none;
+            font-size: 1.6rem;
+            margin-left: 5px;
+        }
+        
+        .deceased-name:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 1200px) {
+            .logo-container {
+                margin-left: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .overlay-titlea .breadcrumb {
+                font-size: 1.2rem;
+            }
+        }
+
+        .footer-bottom-conpany-info {
+            background-color: #B9AD9A;
+            padding: 15px 0;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            margin-top: 50px;
+            color: white;
+            {% comment %} height: 500px; {% endcomment %}
+        }
+
+        .footer-bottom-conpany-info a {
+            color: white;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .footer-bottom-conpany-info a:hover {
+            color: #007bff;
+            text-decoration: underline;
+        }
+
+        .copyright {
+            background-color: #385A52;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 12px;
+            border-top: 1px solid #dee2e6;
+            height: 500px;
+        }
+
+        .btn-primary.btn-sm {
+            font-size: 1.6rem;
+            padding: 8px 16px;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Logo 區域 -->
+    <div class="logo-container">
+        <img src="{% static 'images/logo_main.svg' %}" alt="Logo">
+        {% comment %} <a href="https://www.leniency.com.tw/index.php" title="XX佛教禮儀" target="_blank">
+            <img src="{% static 'images/logo_main.svg' %}" alt="Logo">
+        </a> {% endcomment %}
+    </div>
+    
+    <!-- 新的標題橫幅結構 -->
+    <div class="overlay-titlea">
+        <div class="container">
+            <h1>XX佛教禮儀雲端系統</h1>
+            <h3>公 開 訃 聞 查 詢</h3>
+            <nav aria-label="breadcrumb" class="d-none d-md-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="https://www.leniency.com.tw/index.php" target="_blank">XX佛教禮儀官網</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <a>公開訃聞列表</a>
+                    </li>
+                </ol>
+            </nav>
+        </div>
+        <img src="{% static 'images/bg.png' %}" alt="背景圖" class="background-image">
+    </div>
+    
+    <!-- 手機版麵包屑導航 -->
+    <div class="row d-md-none" style="background: #ececec;">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">首頁</a></li>
+                <li class="breadcrumb-item active" aria-current="page">訃聞列表</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <!-- 主要內容區 -->
+    <div class="content-container">
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <select class="form-select" id="area-select">
+                <option value="">服務區域選擇</option>
+                <option value="1">北部服務處</option>
+                <option value="2">中部服務處</option>
+                <option value="3">南部服務處</option>
+            </select>
+            
+            <input type="text" class="form-control" id="name-input" placeholder="請輸入往生菩薩大名">
+            
+            <button class="btn btn-conform" onclick="searchObituaries()">訃聞搜尋</button>
+        </div>
+        
+        <!-- 訃聞列表 -->
+        <table class="obituary-table" id="obituary-table">
+            <tbody>
+                {% for obituary in obituaries %}
+                {% if obituary.is_public == 1 %}
+                <tr>
+                    <td class="service-area">
+                        {% if obituary.service_area == '1' %}
+                            北部服務處
+                        {% elif obituary.service_area == '2' %}
+                            中部服務處
+                        {% elif obituary.service_area == '3' %}
+                            南部服務處
+                        {% endif %}
+                    </td>
+                    <td class="deceased-name-cell">
+                        往生菩薩 : 
+                        <a href="{% url 'make_obituary' obituary.id %}" 
+                           class="deceased-name"
+                           target="_blank"
+                           data-obituary-id="{{ obituary.id }}"
+                           data-count="{{ obituary.view_count|default:'0' }}">
+                            {{ obituary.deceased_name }}
+                        </a>
+                    </td>
+                    <td class="action-cell" style="text-align: right;">
+                        <a href="{% url 'make_obituary' obituary.id %}" 
+                           class="btn btn-primary btn-sm"
+                           target="_blank"
+                           style="background-color: #385A52; border-color: #385A52;">
+                            訃聞查看/花禮訂購
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% comment %} footer {% endcomment %}
+    <div class="footer-bottom-conpany-info">
+        <span>XX佛教相關連結 >> </span>
+        <a href="https://www.leniency.com.tw/" target="_blank"> XX佛教官網</a> 
+        <span>|</span>
+        <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> XX佛教粉絲團</a>
+        <span>|</span>
+        <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> XX佛教Youtube</a>
+        <span>|</span>
+        {% if data.area_selection == '1' %}
+            <a href="https://maps.app.goo.gl/apuxVC9fTTyGRWQL8" target="_blank"> 留下您的Google評論</a>
+        {% else %}
+            <a href="https://maps.app.goo.gl/cQEdZ9SVdXe9d4zm7" target="_blank"> 留下您的Google評論</a>
+        {% endif %}
+    </div>
+    <div class="copyright">
+        © {% now "Y" %} XX佛教禮儀雲端訃聞系統 All Rights Reserved. 
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 添加搜尋功能相關的 JavaScript -->
+    <script>
+        // 保留原有的點擊計數功能
+        async function countClick(event, obituaryId, linkElement) {
+            try {
+                const response = await fetch(`/obituary/count/${obituaryId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Click-Type': 'actual_click'
+                    }
+                });
+            } catch (error) {
+                console.error('計數更新錯誤:', error);
+            }
+        }
+
+        function searchObituaries() {
+            const area = document.getElementById('area-select').value;
+            const name = document.getElementById('name-input').value;
+            
+            // 構建查詢參數
+            const params = new URLSearchParams();
+            if (area) params.append('service_area', area);
+            if (name) params.append('deceased_name', name);
+            
+            // 發送搜尋請求
+            fetch(`/obituary/list/?${params.toString()}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateObituaryList(data.obituaries);
+                } else {
+                    console.error('搜尋失敗:', data.error || '未知錯誤');
+                    updateObituaryList([]);
+                }
+            })
+            .catch(error => {
+                console.error('搜尋錯誤:', error);
+                updateObituaryList([]);
+            });
+        }
+        
+        function updateObituaryList(obituaries) {
+            const tableBody = document.querySelector('#obituary-table tbody');
+            tableBody.innerHTML = '';  // 清空現有內容
+            
+            if (!obituaries || obituaries.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="3" style="text-align: center; padding: 20px;">
+                        未找到符合條件的訃聞
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+                return;
+            }
+            
+            obituaries.forEach(obituary => {
+                if (obituary.is_public === 1) {
+                    const tr = document.createElement('tr');
+                    
+                    // 服務區域
+                    let areaText = '';
+                    switch(obituary.service_area) {
+                        case '1': areaText = '北部服務處'; break;
+                        case '2': areaText = '中部服務處'; break;
+                        case '3': areaText = '南部服務處'; break;
+                    }
+                    
+                    tr.innerHTML = `
+                        <td class="service-area">${areaText}</td>
+                        <td class="deceased-name-cell">
+                            往生菩薩 : 
+                            <a href="/obituary/make/${obituary.id}/" 
+                               class="deceased-name"
+                               target="_blank"
+                               data-obituary-id="${obituary.id}"
+                               data-count="${obituary.view_count || 0}">
+                                ${obituary.deceased_name}
+                            訃聞
+                            </a>
+                        </td>
+                        <td class="action-cell" style="text-align: right;">
+                            <a href="/obituary/make/${obituary.id}/" 
+                               class="btn btn-primary btn-sm"
+                               target="_blank"
+                               style="background-color: #385A52; border-color: #385A52;">
+                                訃聞查看/花禮訂購
+                            </a>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(tr);
+                }
+            });
+            
+            // 重新綁定點擊事件
+            bindClickEvents();
+        }
+        
+        function bindClickEvents() {
+            const obituaryLinks = document.querySelectorAll('.deceased-name');
+            obituaryLinks.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    const obituaryId = this.getAttribute('data-obituary-id');
+                    if (obituaryId) {
+                        countClick(event, obituaryId, this);
+                    }
+                });
+            });
+        }
+
+        // 頁面載入時初始化事件監聽
+        document.addEventListener('DOMContentLoaded', function() {
+            bindClickEvents();
+        });
+    </script>
+</body>
+</html>

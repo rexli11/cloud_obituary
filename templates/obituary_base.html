@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>楊子佛教禮儀雲端訃聞系統</title>
+    <title>XX佛教禮儀雲端訃聞系統</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
@@ -59,7 +59,7 @@
         }
         
         .list-title {
-            color: #4a76cf;
+            color: #385A52;
             margin-bottom: 20px;
             font-size: 1.8em;
             font-weight: bold;
@@ -156,8 +156,9 @@
     <div class="container">
         <!-- 標題和登出按鈕 -->
         <div class="title-container">
-            <h2 class="mb-0">楊子佛教雲端訃聞</h2>
+            <h2 class="mb-0">XX佛教雲端訃聞</h2>
             <div class="button-group">
+                <a href="{% url 'obituary_list' %}" class="nav-btn">客戶端訃聞列表</a>
                 <a href="{% url 'create_obituary' %}" class="nav-btn">製作新訃聞</a>
                 <a href="{% url 'home' %}" class="nav-btn">回首頁</a>
                 <a href="{% url 'logout' %}" class="nav-btn">登出</a>
@@ -192,14 +193,13 @@
                             </span>
                             
                             <!-- 訃聞連結 -->
-                            <a href="{{ obituary.file_path }}" 
+                            <a href="{% url 'make_obituary' obituary.id %}" 
                                class="obituary-link" 
                                target="_blank"
-                               onclick="countClick(event, {{ obituary.id }}, this)"
+                               data-obituary-id="{{ obituary.id }}"
                                data-count="{{ obituary.view_count|default:'0' }}">
                                 {{ obituary.created_at|date:"Y/m/d" }} 案件名稱：{{ obituary.deceased_name }}
                             </a>
-                            
                         </div>
                         
                         <!-- 按鈕群組 -->
@@ -318,7 +318,8 @@
                 const response = await fetch(`/obituary/count/${obituaryId}/`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Click-Type': 'actual_click'
                     }
                 });
                 
@@ -337,18 +338,29 @@
             }
         }
 
-        // 移除其他不必要的更新函數，保持原有功能
         document.addEventListener('DOMContentLoaded', function() {
             const obituaryLinks = document.querySelectorAll('.obituary-link');
+            
             obituaryLinks.forEach(link => {
-                const obituaryId = link.getAttribute('onclick').match(/\d+/)[0];
-                if (obituaryId) {
-                    link.setAttribute('data-obituary-id', obituaryId);
-                }
+                // 只保留點擊相關的事件
+                link.addEventListener('click', function(event) {
+                    const obituaryId = this.getAttribute('data-obituary-id');
+                    if (obituaryId) {
+                        countClick(event, obituaryId, this);
+                    }
+                });
+                
+                link.addEventListener('contextmenu', function(event) {
+                    const obituaryId = this.getAttribute('data-obituary-id');
+                    if (obituaryId) {
+                        countClick(event, obituaryId, this);
+                    }
+                });
             });
         });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+</html> 
 </html> 

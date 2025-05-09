@@ -6,7 +6,7 @@ import mysql.connector
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.middleware.csrf import get_token
 from django.urls import reverse
@@ -71,416 +71,127 @@ def delete_obituary(request, obituary_id):
 
 def edit_obituary(request, obituary_id):
     """編輯訃聞"""
-    if not request.session.get('is_authenticated'):
-        messages.error(request, '請先登入')
-        return redirect('login')
-        
-    db = connection_db()
-    if db is None:
-        messages.error(request, '系統錯誤，請稍後再試')
-        return redirect('obituary_base')
-        
-    cursor = db.cursor(dictionary=True)
-    
-    try:
-        # 獲取訃聞基本資料
-        cursor.execute("""
-            SELECT * FROM obituary WHERE id = %s
-        """, [obituary_id])
-        obituary_data = cursor.fetchone()
-        
-        if not obituary_data:
-            messages.error(request, '找不到該訃聞')
-            return redirect('obituary_base')
-            
-        # 處理日期格式
-        if obituary_data['birth_date']:
-            obituary_data['birth_date'] = obituary_data['birth_date'].strftime('%Y-%m-%d')
-        if obituary_data['death_date']:
-            obituary_data['death_date'] = obituary_data['death_date'].strftime('%Y-%m-%d')
-            
-        # 獲取各種類型的照片
-        photo_queries = {
-            'deceased_photo': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'personal' LIMIT 1",
-            'obituary_front': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_front' LIMIT 1",
-            'obituary_back': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_back' LIMIT 1",
-            'life_photos': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'life'",
-            'flower_gifts': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'flower_gift'"
-        }
-        
-        photos = {}
-        for key, query in photo_queries.items():
-            cursor.execute(query, [obituary_id])
-            if key in ['life_photos', 'flower_gifts']:
-                photos[key] = cursor.fetchall()
-                print(f"獲取到 {len(photos[key])} 張 {key}")
-            else:
-                photo = cursor.fetchone()
-                if photo and photo.get('photo_link'):
-                    print(f"獲取到 {key} 照片")
-                    photos[key] = {
-                        'id': photo['id'],
-                        'data': base64.b64encode(photo['photo_link']).decode('utf-8')
-                    }
-        
-        # 處理儀式流程
-        ceremony_process = []
-        if obituary_data.get('ceremony_process_list'):
-            try:
-                ceremony_process = json.loads(obituary_data['ceremony_process_list'])
-                print(f"解析儀式流程: {len(ceremony_process)} 項")
-            except json.JSONDecodeError:
-                print(f"解析儀式流程錯誤")
-        
-        # 準備編輯用的資料
-        context = {
-            'edit_mode': True,
-            'obituary': {
-                'id': obituary_data['id'],
-                'service_area': obituary_data['service_area'],
-                'deceased_name': obituary_data['deceased_name'],
-                'birth_date': obituary_data['birth_date'],
-                'death_date': obituary_data['death_date'],
-                'hide_birth_date': bool(obituary_data['hide_birth_date']),
-                'hide_death_date': bool(obituary_data['hide_death_date']),
-                'ceremony_details': obituary_data['ceremony_details'] or '',
-                'farewell_location_name': obituary_data.get('location_name', ''),
-                'farewell_location_address': obituary_data.get('location_address', ''),
-                'farewell_location_area': obituary_data.get('location_area', ''),
-                'farewell_traffic_info': obituary_data.get('traffic_info', ''),
-                'tomb_location_name': obituary_data.get('tomb_location_name', ''),
-                'tomb_location_address': obituary_data.get('tomb_location_address', ''),
-                'tomb_location_area': obituary_data.get('tomb_location_area', ''),
-                'tomb_traffic_info': obituary_data.get('tomb_traffic_info', ''),
-                'flower_gift_description': obituary_data.get('flower_gift_description', ''),
-                'agent_name': obituary_data.get('agent_name', ''),
-                'agent_phone': obituary_data.get('agent_phone', ''),
-                'memorial_video': obituary_data.get('memorial_video', ''),
-                'is_draft': bool(obituary_data.get('is_draft', False))
-            },
-            'photos': photos,
-            'ceremony_process': ceremony_process
-        }
-        
-        # 輸出結構化的調試信息
-        print("\n編輯資料摘要:")
-        print(f"訃聞 ID: {context['obituary']['id']}")
-        print(f"往生者: {context['obituary']['deceased_name']}")
-        print(f"服務區域: {context['obituary']['service_area']}")
-        print(f"照片數量: {len(photos)}")
-        print(f"儀式流程: {len(ceremony_process)} 項")
-        print("="*50)
-        
-        return render(request, 'obituary_maker.html', context)
-        
-    except Exception as e:
-        print(f"編輯訃聞錯誤: {e}")
-        messages.error(request, '無法載入訃聞資料')
-        return redirect('obituary_base')
-        
-    finally:
-        cursor.close()
-        db.close()
-
-@require_POST
-@csrf_exempt
-def count_obituary_click(request, obituary_id):
-    """記錄訃聞點擊次數並處理物車"""
     try:
         print("\n" + "="*50)
-        print(f"收到點擊計數請求")
+        print("開始載入草稿編輯資料...")
         print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"訃聞 ID: {obituary_id}")
         
-        # 使用修改後的計數方法
-        new_count = ObituaryClick.increment_click(obituary_id)
-        
-        if new_count > 0:
-            print(f"計數更新成功！")
-            print(f"- 訃聞 ID: {obituary_id}")
-            print(f"- 新計數: {new_count}")
-            print(f"- 更新時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            print("="*50 + "\n")
-            
-            # 在 response 中添加清除購物車的標
-            return JsonResponse({
-                'success': True,
-                'new_count': new_count,
-                'clear_cart': True,  # 添加清除購物車標記
-                'obituary_id': obituary_id  # 添加訃聞 ID
-            })
-    
-    except Exception as e:
-        print(f"計數更新錯誤！")
-        print(f"- 錯誤類型: {type(e).__name__}")
-        print(f"- 錯誤訊息: {str(e)}")
-        print(f"- 訃聞 ID: {obituary_id}")
-        print(f"- 時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("="*50 + "\n")
-        
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
-
-@require_POST
-def update_obituary(request):
-    """上傳訃聞資料到資料庫"""
-    try:
         if not request.session.get('is_authenticated'):
-            raise Exception("請先登入")
+            print("錯誤: 使用者未登入")
+            messages.error(request, '請先登入')
+            return redirect('login')
             
         db = connection_db()
         if not db:
+            print("錯誤: 資料庫連接失敗")
             raise Exception("資料庫連接失敗")
             
         cursor = db.cursor(dictionary=True)
         
         try:
-            # 設置較長的超時時間和較大的packet大小
-            cursor.execute("SET SESSION wait_timeout=300")  # 設置5分鐘超時
-            cursor.execute("SET GLOBAL max_allowed_packet=67108864")  # 設置64MB
+            # 獲取訃聞基本資料
+            cursor.execute("""
+                SELECT * FROM obituary WHERE id = %s
+            """, [obituary_id])
+            obituary_data = cursor.fetchone()
             
-            # 獲取基本資料
-            service_area = request.POST.get('area_selection')
-            deceased_name = request.POST.get('deceased_name')
-            is_draft = request.POST.get('is_draft') == 'true'
+            if not obituary_data:
+                print("錯誤: 找不到訃聞")
+                messages.error(request, '找不到該訃聞')
+                return redirect('obituary_base')
+                
+            print(f"\n基本資料:")
+            print(f"- 往生者: {obituary_data['deceased_name']}")
+            print(f"- 建立時間: {obituary_data['created_at']}")
             
-            # 處理儀式流程列表
-            ceremony_times = request.POST.getlist('ceremony_time[]', [])
-            ceremony_contents = request.POST.getlist('ceremony_content[]', [])
+            # 獲取各種類型的照片
+            photo_queries = {
+                'deceased_photo': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'personal' LIMIT 1",
+                'obituary_front': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_front' LIMIT 1",
+                'obituary_back': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_back' LIMIT 1",
+                'life_photos': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'life'",
+                'flower_gifts': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'flower_gift'"
+            }
+            
+            print("\n照片資料:")
+            photos = {}
+            for key, query in photo_queries.items():
+                cursor.execute(query, [obituary_id])
+                if key in ['life_photos', 'flower_gifts']:
+                    photos[key] = []
+                    results = cursor.fetchall()
+                    print(f"- {key}:")
+                    for idx, photo in enumerate(results, 1):
+                        if photo.get('photo_link'):
+                            photo_data = {
+                                'id': photo['id'],
+                                'photo_link': base64.b64encode(photo['photo_link']).decode('utf-8'),
+                                'name': photo.get('name', ''),
+                                'price': photo.get('price', ''),
+                                'orderable': photo.get('orderable', False),
+                                'file_name': photo.get('file_name', '未命名檔案'),
+                                'created_at': photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')
+                            }
+                            photos[key].append(photo_data)
+                            print(f"  {idx}. ID: {photo['id']}")
+                            print(f"     檔案名稱: {photo.get('file_name', '未命名檔案')}")
+                            print(f"     建立時間: {photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')}")
+                            if key == 'flower_gifts':
+                                print(f"     名稱: {photo.get('name', '')}")
+                                print(f"     價格: {photo.get('price', '')}")
+                                print(f"     可訂購: {'是' if photo.get('orderable') else '否'}")
+                else:
+                    photo = cursor.fetchone()
+                    print(f"- {key}:")
+                    if photo and photo.get('photo_link'):
+                        photos[key] = {
+                            'id': photo['id'],
+                            'data': base64.b64encode(photo['photo_link']).decode('utf-8'),
+                            'name': photo.get('file_name', '未命名檔案'),
+                            'created_at': photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        print(f"  ID: {photo['id']}")
+                        print(f"  檔案名稱: {photo.get('file_name', '未命名檔案')}")
+                        print(f"  建立時間: {photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')}")
+                    else:
+                        print("  未上傳")
+
+            # 處理日期格式
+            if obituary_data['birth_date']:
+                obituary_data['birth_date'] = obituary_data['birth_date'].strftime('%Y-%m-%d')
+            if obituary_data['death_date']:
+                obituary_data['death_date'] = obituary_data['death_date'].strftime('%Y-%m-%d')
+            
+            # 處理儀式流程
             ceremony_process = []
+            if obituary_data.get('ceremony_process_list'):
+                try:
+                    ceremony_process = json.loads(obituary_data['ceremony_process_list'])
+                    print(f"\n儀式流程: {len(ceremony_process)} 項")
+                except json.JSONDecodeError:
+                    print(f"\n解析儀式流程錯誤")
             
-            for time, content in zip(ceremony_times, ceremony_contents):
-                if time and content:
-                    ceremony_process.append({
-                        'time': time,
-                        'content': content
-                    })
+            # 準備模板資料
+            context = {
+                'edit_mode': True,
+                'obituary': obituary_data,
+                'photos': photos,
+                'ceremony_process': ceremony_process
+            }
             
-            # 將儀式流程轉換為JSON字串
-            ceremony_process_json = json.dumps(ceremony_process, ensure_ascii=False)
-            
-            print("\n儀式流程資料:")
-            print(f"- 數量: {len(ceremony_process)}")
-            print(f"- JSON: {ceremony_process_json}")
-
-            # 檢查是否為更新現有訃聞
-            obituary_id = request.POST.get('obituary_id')
-            
-            # 修改照片上傳函數
-            def save_photo(file, photo_type, name=None, price=None, orderable=False):
-                if file:
-                    try:
-                        # 重新建立連接以防止超時
-                        if not db.is_connected():
-                            db.ping(reconnect=True)
-                            
-                        # 讀取圖片
-                        img = Image.open(file)
-                        
-                        # 轉換為RGB模式（如果是RGBA）
-                        if img.mode == 'RGBA':
-                            img = img.convert('RGB')
-                        
-                        # 計算新的尺寸，保持比例
-                        max_size = (800, 800)  # 最大尺寸
-                        img.thumbnail(max_size, Image.Resampling.LANCZOS)
-                        
-                        # 保存為JPEG格式，使用BytesIO
-                        output = io.BytesIO()
-                        img.save(output, format='JPEG', quality=85)  # 降低品質以減少文件大小
-                        photo_data = output.getvalue()
-                        
-                        # 檢查壓縮後的大小
-                        if len(photo_data) > 16777215:  # MySQL MEDIUMBLOB的最大大小
-                            raise Exception("圖片太大，即使壓縮後仍超過限制")
-                        
-                        # 插入資料庫
-                        cursor.execute("""
-                            INSERT INTO photos (
-                                obituary_id, photo_type, photo_link, 
-                                name, price, orderable, created_at
-                            ) VALUES (%s, %s, %s, %s, %s, %s, NOW())
-                        """, [
-                            obituary_id, photo_type, photo_data,
-                            name, price, orderable
-                        ])
-                        db.commit()  # 每次照片上傳後立即提交
-                        
-                        print(f"成功上傳照片 ({photo_type}) - 大小: {len(photo_data)} bytes")
-                        
-                    except Exception as e:
-                        print(f"照片上傳錯誤 ({photo_type}): {e}")
-                        if "max_allowed_packet" in str(e):
-                            raise Exception("圖片大小超過系統限制，請使用較小的圖片")
-                        raise
-
-            if obituary_id:
-                # 更新現有訃聞的代碼保持不變...
-                cursor.execute("""
-                    UPDATE obituary SET
-                        service_area = %s,
-                        deceased_name = %s,
-                        birth_date = NULLIF(%s, ''),
-                        death_date = NULLIF(%s, ''),
-                        ceremony_details = %s,
-                        hide_birth_date = %s,
-                        hide_death_date = %s,
-                        location_name = NULLIF(%s, ''),
-                        location_address = NULLIF(%s, ''),
-                        location_area = NULLIF(%s, ''),
-                        traffic_info = NULLIF(%s, ''),
-                        tomb_location_name = NULLIF(%s, ''),
-                        tomb_location_address = NULLIF(%s, ''),
-                        tomb_location_area = NULLIF(%s, ''),
-                        tomb_traffic_info = NULLIF(%s, ''),
-                        flower_gift_description = NULLIF(%s, ''),
-                        agent_name = NULLIF(%s, ''),
-                        agent_phone = NULLIF(%s, ''),
-                        memorial_video = NULLIF(%s, ''),
-                        background_music = NULLIF(%s, ''),
-                        desktop_background = NULLIF(%s, ''),
-                        font_style = NULLIF(%s, ''),
-                        ceremony_process_list = %s,
-                        is_draft = %s,
-                        updated_at = NOW()
-                    WHERE id = %s
-                """, [
-                    service_area, deceased_name,
-                    request.POST.get('birth_date', ''),
-                    request.POST.get('death_date', ''),
-                    request.POST.get('ceremony_details', ''),
-                    request.POST.get('hide_birth_date') == 'on',
-                    request.POST.get('hide_death_date') == 'on',
-                    request.POST.get('farewell_location_name', ''),
-                    request.POST.get('farewell_location_address', ''),
-                    request.POST.get('farewell_location_area', ''),
-                    request.POST.get('farewell_traffic_info', ''),
-                    request.POST.get('tomb_location_name', ''),
-                    request.POST.get('tomb_location_address', ''),
-                    request.POST.get('tomb_location_area', ''),
-                    request.POST.get('tomb_traffic_info', ''),
-                    request.POST.get('flower_gift_description', ''),
-                    request.POST.get('agent_name', ''),
-                    request.POST.get('agent_phone', ''),
-                    request.POST.get('memorial_video', ''),
-                    request.POST.get('background_music', ''),
-                    request.POST.get('desktop_background', ''),
-                    request.POST.get('font_style', ''),
-                    ceremony_process_json,
-                    is_draft,
-                    obituary_id
-                ])
-                db.commit()  # 提交訃聞更新
-            else:
-                # 創建新訃聞的代碼保持不變...
-                cursor.execute("""
-                    INSERT INTO obituary (
-                        service_area, deceased_name, created_at,
-                        birth_date, death_date, ceremony_details,
-                        hide_birth_date, hide_death_date,
-                        location_name, location_address, location_area, traffic_info,
-                        tomb_location_name, tomb_location_address, tomb_location_area,
-                        tomb_traffic_info, flower_gift_description,
-                        agent_name, agent_phone, memorial_video,
-                        background_music, desktop_background, font_style,
-                        ceremony_process_list,
-                        is_draft
-                    ) VALUES (
-                        %s, %s, NOW(),
-                        NULLIF(%s, ''), NULLIF(%s, ''), %s,
-                        %s, %s,
-                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''),
-                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''),
-                        NULLIF(%s, ''), NULLIF(%s, ''),
-                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''),
-                        NULLIF(%s, ''), NULLIF(%s, ''), NULLIF(%s, ''),
-                        %s,
-                        %s
-                    )
-                """, [
-                    service_area, deceased_name,
-                    request.POST.get('birth_date', ''),
-                    request.POST.get('death_date', ''),
-                    request.POST.get('ceremony_details', ''),
-                    request.POST.get('hide_birth_date') == 'on',
-                    request.POST.get('hide_death_date') == 'on',
-                    request.POST.get('farewell_location_name', ''),
-                    request.POST.get('farewell_location_address', ''),
-                    request.POST.get('farewell_location_area', ''),
-                    request.POST.get('farewell_traffic_info', ''),
-                    request.POST.get('tomb_location_name', ''),
-                    request.POST.get('tomb_location_address', ''),
-                    request.POST.get('tomb_location_area', ''),
-                    request.POST.get('tomb_traffic_info', ''),
-                    request.POST.get('flower_gift_description', ''),
-                    request.POST.get('agent_name', ''),
-                    request.POST.get('agent_phone', ''),
-                    request.POST.get('memorial_video', ''),
-                    request.POST.get('background_music', ''),
-                    request.POST.get('desktop_background', ''),
-                    request.POST.get('font_style', ''),
-                    ceremony_process_json,
-                    is_draft
-                ])
-                obituary_id = cursor.lastrowid
-                db.commit()  # 提交新訃聞創建
-
-            # 分別處理每種類型的照片上傳
-            try:
-                # 處理個人照片
-                if 'deceased_photo' in request.FILES:
-                    print("開始上傳個人照片...")
-                    save_photo(request.FILES['deceased_photo'], 'personal')
-
-                # 處理訃聞正反面照片
-                if 'obituary_front_image' in request.FILES:
-                    print("開始上傳訃聞正面...")
-                    save_photo(request.FILES['obituary_front_image'], 'obituary_front')
-                if 'obituary_back_image' in request.FILES:
-                    print("開始上傳訃聞背面...")
-                    save_photo(request.FILES['obituary_back_image'], 'obituary_back')
-
-                # 處理生活照
-                for key in request.FILES:
-                    if key.startswith('life_photos['):
-                        print(f"開始上傳生活照: {key}")
-                        save_photo(request.FILES[key], 'life')
-
-                # 處理花禮照片
-                for key in request.FILES:
-                    if key.startswith('flower_gift_list['):
-                        print(f"開始上傳花禮照片: {key}")
-                        index = key[key.find('[')+1:key.find(']')]
-                        name = request.POST.get(f'flower_gift_list[{index}][name]', '')
-                        price = request.POST.get(f'flower_gift_list[{index}][price]', '')
-                        orderable = request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'
-                        save_photo(
-                            request.FILES[key], 
-                            'flower_gift',
-                            name=name,
-                            price=price,
-                            orderable=orderable
-                        )
-            except Exception as photo_error:
-                print(f"照片處理過程中發生錯誤: {photo_error}")
-                raise Exception(str(photo_error))
-            
-            print("\n資料儲存成功!")
-            print(f"訃聞 ID: {obituary_id}")
+            print("\n編輯資料摘要:")
+            print(f"訃聞 ID: {obituary_data['id']}")
+            print(f"往生者姓名: {obituary_data['deceased_name']}")
+            print(f"服務區域: {obituary_data['service_area']}")
+            print(f"照片數量: {len(photos)}")
+            print(f"儀式流程: {len(ceremony_process)} 項")
             print("="*50 + "\n")
             
-            return JsonResponse({
-                'success': True,
-                'obituary_id': obituary_id,
-                'is_draft': is_draft,
-                'redirect_url': reverse('draft_obituaries' if is_draft else 'obituary_base')
-            })
+            return render(request, 'draft_maker.html', context)
             
         except Exception as e:
-            db.rollback()
-            print(f"\n資料庫操作錯誤: {e}")
+            print(f"編輯訃聞錯誤: {e}")
             raise
             
         finally:
@@ -488,7 +199,533 @@ def update_obituary(request):
             db.close()
             
     except Exception as e:
-        print(f"儲存失敗: {e}")
+        print(f"載入訃聞失敗: {e}")
+        messages.error(request, '無法載入訃聞資料')
+        return redirect('obituary_base')
+
+def preview_draft(request, obituary_id):
+    """預覽草稿訃聞"""
+    try:
+        print("\n" + "="*50)
+        print("開始載入草稿預覽...")
+        print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"訃聞 ID: {obituary_id}")
+        
+        db = connection_db()
+        if not db:
+            raise Exception("資料庫連接失敗")
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            # 獲取草稿訃聞資料
+            cursor.execute("""
+                SELECT * FROM obituary 
+                WHERE id = %s AND is_draft = 1
+            """, [obituary_id])
+            
+            obituary_data = cursor.fetchone()
+            if not obituary_data:
+                raise Exception("找不到草稿訃聞")
+            
+            # 處理儀式流程
+            ceremony_process = []
+            if obituary_data.get('ceremony_process_list'):
+                try:
+                    ceremony_process = json.loads(obituary_data['ceremony_process_list'])
+                    print(f"\n儀式流程解析成功:")
+                    for idx, process in enumerate(ceremony_process, 1):
+                        print(f"  {idx}. 時間: {process.get('time', '')}")
+                        print(f"     內容: {process.get('content', '')}")
+                except json.JSONDecodeError as e:
+                    print(f"解析儀式流程錯誤: {e}")
+                    ceremony_process = []
+            
+            # 獲取照片資料
+            photo_queries = {
+                'deceased_photo': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'personal' LIMIT 1",
+                'obituary_front': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_front' LIMIT 1",
+                'obituary_back': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_back' LIMIT 1",
+                'life_photos': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'life'",
+                'flower_gifts': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'flower_gift'"
+            }
+            
+            preview_data = {
+                'deceased_name': obituary_data['deceased_name'],
+                'birth_date': obituary_data['birth_date'],
+                'death_date': obituary_data['death_date'],
+                'hide_birth_date': obituary_data['hide_birth_date'],
+                'hide_death_date': obituary_data['hide_death_date'],
+                'ceremony_details': obituary_data['ceremony_details'],
+                'location_name': obituary_data.get('location_name', ''),
+                'location_address': obituary_data.get('location_address', ''),
+                'location_area': obituary_data.get('location_area', ''),
+                'traffic_info': obituary_data.get('traffic_info', ''),
+                'tomb_location_name': obituary_data.get('tomb_location_name', ''),
+                'tomb_location_address': obituary_data.get('tomb_location_address', ''),
+                'tomb_location_area': obituary_data.get('tomb_location_area', ''),
+                'tomb_traffic_info': obituary_data.get('tomb_traffic_info', ''),
+                'agent_name': obituary_data.get('agent_name', ''),
+                'agent_phone': obituary_data.get('agent_phone', ''),
+                'desktop_background': obituary_data.get('desktop_background', ''),
+                'font_style': obituary_data.get('font_style', ''),
+                'life_photos': [],
+                'flower_gifts': [],
+                'ceremony_process': ceremony_process  # 添加儀式流程
+            }
+            
+            # 處理照片
+            for key, query in photo_queries.items():
+                cursor.execute(query, [obituary_id])
+                if key in ['life_photos', 'flower_gifts']:
+                    photos = []
+                    for photo in cursor.fetchall():
+                        if photo.get('photo_link'):
+                            photo_data = {
+                                'image': f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode()}",
+                                'name': photo.get('name', ''),
+                                'price': photo.get('price', ''),
+                                'orderable': photo.get('orderable', False)
+                            }
+                            photos.append(photo_data)
+                    preview_data[key] = photos
+                else:
+                    photo = cursor.fetchone()
+                    if photo and photo.get('photo_link'):
+                        preview_data[key] = f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode()}"
+            
+            print("\n預覽資料準備成!")
+            print(f"- 往生者: {preview_data['deceased_name']}")
+            print(f"- 照片數量: {len(preview_data.get('life_photos', []))}")
+            print(f"- 花禮數量: {len(preview_data.get('flower_gifts', []))}")
+            print(f"- 儀式流程: {len(preview_data.get('ceremony_process', []))}")
+            print("="*50 + "\n")
+            
+            return render(request, 'draft_preview.html', {'data': preview_data})
+            
+        except Exception as e:
+            print(f"預覽資料處理錯誤: {e}")
+            raise
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"預覽載入失敗: {e}")
+        messages.error(request, '無法載入預覽')
+        return redirect('draft_obituaries')
+
+@require_POST
+@csrf_exempt
+def count_obituary_click(request, obituary_id):
+    """記錄訃聞點擊次數"""
+    try:
+        # 檢查請求來源
+        referer = request.META.get('HTTP_REFERER', '')
+        # 只有從 obituary_base.html 或 obituary_list.html 點擊訪問時才計數
+        if not ('obituary/' in referer or 'obituary/list/' in referer):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid request source'
+            })
+
+        # 檢查是否是實際點擊
+        click_type = request.headers.get('X-Click-Type')
+        if click_type != 'actual_click':
+            return JsonResponse({
+                'success': False,
+                'error': 'Not an actual click'
+            })
+
+        print("\n" + "="*50)
+        print(f"開始處理點擊計��請求")
+        print(f"時��: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"訃聞 ID: {obituary_id}")
+        print(f"請求來源: {referer}")
+        print(f"點擊類型: {click_type}")
+        
+        db = connection_db()
+        if not db:
+            raise Exception("資料庫連接失敗")
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            # 更新點擊次數
+            cursor.execute("""
+                UPDATE obituary 
+                SET view_count = COALESCE(view_count, 0) + 1 
+                WHERE id = %s
+            """, [obituary_id])
+            
+            # 獲取更新後的點擊次數
+            cursor.execute("""
+                SELECT view_count 
+                FROM obituary 
+                WHERE id = %s
+            """, [obituary_id])
+            
+            result = cursor.fetchone()
+            new_count = result['view_count'] if result else 0
+            
+            db.commit()
+            
+            print(f"點擊計數更新成功！")
+            print(f"- 訃聞 ID: {obituary_id}")
+            print(f"- 新點擊次數: {new_count}")
+            print(f"- 更新時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print("="*50 + "\n")
+            
+            return JsonResponse({
+                'success': True,
+                'new_count': new_count
+            })
+            
+        except Exception as e:
+            db.rollback()
+            print(f"點擊計數更新錯誤: {e}")
+            raise
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"點擊計數處理失敗: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@require_http_methods(["GET", "POST"])
+def update_obituary(request):
+    """更新訃聞資料"""
+    try:
+        print("\n" + "="*50)
+        print("開始更新訃聞資料...")
+        print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        db = connection_db()
+        if not db:
+            return JsonResponse({'success': False, 'error': '資料庫連接失敗'})
+            
+        cursor = db.cursor(dictionary=True)
+        
+        def compress_image(image_file, max_size=1024*1024):  # 預設最大1MB
+            """壓縮圖片"""
+            try:
+                # 讀取圖片
+                img = Image.open(image_file)
+                
+                # 保持原始圖片格式
+                format = img.format
+                
+                # 計算目標尺寸
+                width, height = img.size
+                while (width * height * 3) > max_size:  # 3 bytes per pixel (RGB)
+                    width = int(width * 0.9)  # 每次縮小10%
+                    height = int(height * 0.9)
+                
+                # 調整圖片大小
+                img = img.resize((width, height), Image.Resampling.LANCZOS)
+                
+                # 轉換為 bytes
+                output = io.BytesIO()
+                img.save(output, format=format, quality=85, optimize=True)
+                compressed_image = output.getvalue()
+                
+                return compressed_image
+            except Exception as e:
+                print(f"圖片壓縮錯誤: {e}")
+                return image_file.read()
+
+        try:
+            # 定義照片類型對應
+            photo_types = {
+                'deceased_photo': 'personal',
+                'obituary_front_image': 'obituary_front',
+                'obituary_back_image': 'obituary_back'
+            }
+            
+            obituary_id = request.POST.get('obituary_id')
+            is_draft = request.POST.get('is_draft', 'false').lower() == 'true'
+            
+            # 處理儀式流程列表
+            ceremony_times = request.POST.getlist('ceremony_time[]')
+            ceremony_contents = request.POST.getlist('ceremony_content[]')
+            ceremony_process_list = []
+            
+            print("\n處理儀式流程...")
+            for time, content in zip(ceremony_times, ceremony_contents):
+                if content:  # 只添加非空的項目
+                    ceremony_process_list.append({
+                        'time': time,
+                        'content': content
+                    })
+                    print(f"- 流程: {time} - {content}")
+
+            # 修改獲取 is_public 的方式
+            is_public = request.POST.get('is_public_hidden')  # 從隱藏欄位獲取值
+            if is_public is None:  # 如果隱藏欄位沒有值，則從選擇框獲取
+                is_public = request.POST.get('is_public', '0')
+            
+            # 準備更新的數據
+            update_data = {
+                'service_area': request.POST.get('area_selection'),
+                'deceased_name': request.POST.get('deceased_name'),
+                'birth_date': request.POST.get('birth_date'),
+                'death_date': request.POST.get('death_date'),
+                'hide_birth_date': request.POST.get('hide_birth_date') == 'on',
+                'hide_death_date': request.POST.get('hide_death_date') == 'on',
+                'ceremony_details': request.POST.get('ceremony_details'),
+                'background_music': request.POST.get('background_music', '').replace('static/audio/', ''),
+                'desktop_background': request.POST.get('desktop_background'),
+                'font_style': request.POST.get('font_style'),
+                'is_draft': is_draft,
+                'agent_name': request.POST.get('agent_name'),
+                'agent_phone': request.POST.get('agent_phone'),
+                'memorial_video': request.POST.get('memorial_video'),
+                'flower_gift_description': request.POST.get('flower_gift_description'),
+                'location_name': request.POST.get('farewell_location_name'),
+                'location_address': request.POST.get('farewell_location_address'),
+                'location_area': request.POST.get('farewell_location_area'),
+                'traffic_info': request.POST.get('farewell_traffic_info'),
+                'tomb_location_name': request.POST.get('tomb_location_name'),
+                'tomb_location_address': request.POST.get('tomb_location_address'),
+                'tomb_location_area': request.POST.get('tomb_location_area'),
+                'tomb_traffic_info': request.POST.get('tomb_traffic_info'),
+                'ceremony_process_list': json.dumps(ceremony_process_list),
+                'is_public': int(is_public) if is_public else 0  # 確保轉換為整數
+            }
+
+            # 打印基本資料
+            print("\n基本資料:")
+            print(f"- 服務區域: {update_data['service_area']}")
+            print(f"- 是否公開: {update_data['is_public']}")
+            print(f"- 往生者: {update_data['deceased_name']}")
+            print(f"- 出生日期: {update_data['birth_date']}")
+            print(f"- 死亡日期: {update_data['death_date']}")
+            print(f"- 隱藏出生日期: {update_data['hide_birth_date']}")
+            print(f"- 隱藏死亡日期: {update_data['hide_death_date']}")
+
+            print("\n聯絡資訊:")
+            print(f"- 承辦人: {update_data['agent_name']}")
+            print(f"- 聯絡電話: {update_data['agent_phone']}")
+
+            print("\n告別式資訊:")
+            print(f"- 地點名稱: {update_data['location_name']}")
+            print(f"- 地址: {update_data['location_address']}")
+            print(f"- 區域: {update_data['location_area']}")
+            print(f"- 交通資訊: {update_data['traffic_info']}")
+
+            print("\n靈堂資訊:")
+            print(f"- 地點名稱: {update_data['tomb_location_name']}")
+            print(f"- 地址: {update_data['tomb_location_address']}")
+            print(f"- 區域: {update_data['tomb_location_area']}")
+            print(f"- 交通資訊: {update_data['tomb_traffic_info']}")
+
+            print("\n其他資訊:")
+            print(f"- 儀式細節: {update_data['ceremony_details']}")
+            print(f"- 背景音樂: {update_data['background_music']}")
+            print(f"- 桌面背景: {update_data['desktop_background']}")
+            print(f"- 字體樣式: {update_data['font_style']}")
+            print(f"- 追思影片: {update_data['memorial_video']}")
+            print(f"- 花禮說明: {update_data['flower_gift_description']}")
+
+            # 構建 SQL 更新語句
+            if obituary_id:
+                sql = """
+                    UPDATE obituary SET 
+                        service_area = %(service_area)s,
+                        deceased_name = %(deceased_name)s,
+                        birth_date = %(birth_date)s,
+                        death_date = %(death_date)s,
+                        hide_birth_date = %(hide_birth_date)s,
+                        hide_death_date = %(hide_death_date)s,
+                        ceremony_details = %(ceremony_details)s,
+                        background_music = %(background_music)s,
+                        desktop_background = %(desktop_background)s,
+                        font_style = %(font_style)s,
+                        is_draft = %(is_draft)s,
+                        agent_name = %(agent_name)s,
+                        agent_phone = %(agent_phone)s,
+                        memorial_video = %(memorial_video)s,
+                        flower_gift_description = %(flower_gift_description)s,
+                        location_name = %(location_name)s,
+                        location_address = %(location_address)s,
+                        location_area = %(location_area)s,
+                        traffic_info = %(traffic_info)s,
+                        tomb_location_name = %(tomb_location_name)s,
+                        tomb_location_address = %(tomb_location_address)s,
+                        tomb_location_area = %(tomb_location_area)s,
+                        tomb_traffic_info = %(tomb_traffic_info)s,
+                        ceremony_process_list = %(ceremony_process_list)s,
+                        is_public = %(is_public)s
+                    WHERE id = %(obituary_id)s
+                """
+                update_data['obituary_id'] = obituary_id
+            else:
+                sql = """
+                    INSERT INTO obituary (
+                        service_area, deceased_name, birth_date, death_date,
+                        hide_birth_date, hide_death_date, ceremony_details,
+                        background_music, desktop_background, font_style,
+                        is_draft, agent_name, agent_phone, memorial_video,
+                        flower_gift_description, location_name, location_address,
+                        location_area, traffic_info, tomb_location_name,
+                        tomb_location_address, tomb_location_area, tomb_traffic_info,
+                        ceremony_process_list, is_public
+                    ) VALUES (
+                        %(service_area)s, %(deceased_name)s, %(birth_date)s, %(death_date)s,
+                        %(hide_birth_date)s, %(hide_death_date)s, %(ceremony_details)s,
+                        %(background_music)s, %(desktop_background)s, %(font_style)s,
+                        %(is_draft)s, %(agent_name)s, %(agent_phone)s, %(memorial_video)s,
+                        %(flower_gift_description)s, %(location_name)s, %(location_address)s,
+                        %(location_area)s, %(traffic_info)s, %(tomb_location_name)s,
+                        %(tomb_location_address)s, %(tomb_location_area)s, %(tomb_traffic_info)s,
+                        %(ceremony_process_list)s, %(is_public)s
+                    )
+                """
+            
+            # 執行 SQL
+            cursor.execute(sql, update_data)
+            
+            if not obituary_id:
+                obituary_id = cursor.lastrowid
+                print(f"\n創建新訃聞:")
+                print(f"- 新訃聞 ID: {obituary_id}")
+            else:
+                print(f"\n更新現有訃聞:")
+                print(f"- 訃聞 ID: {obituary_id}")
+
+            print(f"- 往生者: {update_data['deceased_name']}")
+            print(f"- 是否為草稿: {is_draft}")
+            print(f"- 儀式流程數量: {len(ceremony_process_list)}")
+
+            # 處理照片上傳時分批處理
+            print("\n開始處理照片上傳...")
+            total_photos = 0
+
+            # 處理基本照片（往生者照片、訃聞正反面）
+            for field_name, photo_type in photo_types.items():
+                if field_name in request.FILES:
+                    file = request.FILES[field_name]
+                    if file.size > 0:
+                        try:
+                            # 壓縮圖片
+                            compressed_image = compress_image(file)
+                            
+                            photo_data = {
+                                'obituary_id': obituary_id,
+                                'photo_type': photo_type,
+                                'photo_link': compressed_image,
+                                'file_name': file.name,
+                                'created_at': datetime.now()
+                            }
+                            
+                            cursor.execute("""
+                                INSERT INTO photos (
+                                    obituary_id, photo_type, photo_link, file_name, created_at
+                                ) VALUES (%s, %s, %s, %s, %s)
+                            """, [
+                                photo_data['obituary_id'],
+                                photo_data['photo_type'],
+                                photo_data['photo_link'],
+                                photo_data['file_name'],
+                                photo_data['created_at']
+                            ])
+                            
+                            db.commit()
+                            total_photos += 1
+                            print(f"- {field_name}: 已上傳 {file.name}")
+                            
+                        except Exception as e:
+                            print(f"上傳照片失敗: {e}")
+                            continue
+                else:
+                    print(f"- {field_name}: 未上傳")
+
+            # 處理生活照片
+            for key in request.FILES:
+                if key.startswith('life_photos['):
+                    file = request.FILES[key]
+                    if file.size > 0:
+                        try:
+                            # 壓縮圖片
+                            compressed_image = compress_image(file)
+                            
+                            cursor.execute("""
+                                INSERT INTO photos (
+                                    obituary_id, photo_type, photo_link, file_name, created_at
+                                ) VALUES (%s, 'life', %s, %s, NOW())
+                            """, [obituary_id, compressed_image, file.name])
+                            
+                            db.commit()
+                            total_photos += 1
+                            print(f"- 已上傳生活照: {file.name}")
+                            
+                        except Exception as e:
+                            print(f"上傳生活照片失敗: {e}")
+                            continue
+
+            # 處理花禮照片
+            for key in request.FILES:
+                if key.startswith('flower_gift_list['):
+                    try:
+                        index = key[key.find('[')+1:key.find(']')]
+                        file = request.FILES[key]
+                        if file.size > 0:
+                            # 壓縮圖片
+                            compressed_image = compress_image(file)
+                            
+                            name = request.POST.get(f'flower_gift_list[{index}][name]', '')
+                            price = request.POST.get(f'flower_gift_list[{index}][price]', '')
+                            orderable = request.POST.get(f'flower_gift_list[{index}][orderable]') == 'on'
+                            
+                            cursor.execute("""
+                                INSERT INTO photos (
+                                    obituary_id, photo_type, photo_link, file_name,
+                                    name, price, orderable, created_at
+                                ) VALUES (%s, 'flower_gift', %s, %s, %s, %s, %s, NOW())
+                            """, [obituary_id, compressed_image, file.name, name, price, orderable])
+                            
+                            db.commit()
+                            total_photos += 1
+                            print(f"  - 已上傳花禮: {file.name}")
+                            print(f"    名稱: {name}, 價格: {price}, 可訂購: {orderable}")
+                            
+                    except Exception as e:
+                        print(f"上傳花禮照片失敗: {e}")
+                        continue
+
+            print(f"\n照片上傳總結:")
+            print(f"- 總計上傳: {total_photos} 張照片")
+
+            db.commit()
+            
+            print(f"\n訃聞資料更新成功！")
+            print(f"- ID: {obituary_id}")
+            print(f"- 是否為草稿: {is_draft}")
+            print(f"- 更新時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print("="*50 + "\n")
+            
+            return JsonResponse({
+                'success': True,
+                'obituary_id': obituary_id
+            })
+            
+        except Exception as e:
+            db.rollback()
+            print(f"更新訃聞資料錯誤: {e}")
+            raise
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"處理訃聞更新失敗: {e}")
         return JsonResponse({
             'success': False,
             'error': str(e)
@@ -501,7 +738,7 @@ def home_view(request):
     if not request.session.get('is_authenticated'):
         return redirect('login')
     
-    # 获取权限等级
+    # 获取限等级
     permission_level = request.session.get('permission_level')
     
     context = {
@@ -560,6 +797,11 @@ def login_view(request):
                 request.session['user_id'] = user_data['user_id']
                 request.session['username'] = user_data['username']
                 request.session['realname'] = user_data['realname']
+                request.session['phone'] = user_data['phone']
+                request.session['email'] = user_data['email']
+                request.session['department'] = user_data['department']
+                request.session['title'] = user_data['title']
+                request.session['company'] = user_data['company']
                 request.session['permission_level'] = user_data['permission_type']
                 
                 print(f"登入成功 - 用戶: {username}")
@@ -569,7 +811,7 @@ def login_view(request):
                     return redirect(next_url)
                 return redirect('home')
             else:
-                messages.error(request, '帳號或密碼錯誤')
+                messages.error(request, '帳號或密錯誤')
                 return render(request, 'login.html', {'next': next_url})
                 
         except mysql.connector.Error as err:
@@ -596,7 +838,7 @@ def logout_view(request):
         return redirect('home')
 
 def obituary_base(request):
-    """訃聞列表頁面"""
+    """訃聞列表面"""
     if not request.session.get('is_authenticated'):
         messages.error(request, '請先登入')
         return redirect('login')
@@ -758,7 +1000,7 @@ def preview_obituary(request):
             background_music = request.POST.get('background_music', '')
             if background_music:
                 # 移除重複的 static/audio 路徑
-                background_music = background_music.replace('/static/audio/', '')
+                background_music = background_music.replace('static/audio/', '')
                 preview_data['background_music'] = background_music
             
             return render(request, 'preview_obituary.html', {'data': preview_data})
@@ -832,7 +1074,7 @@ def register(request):
             # 準備成功訊息
             success_message = f"""
                 註冊成功！
-                用戶名：{username}
+                用戶：{username}
                 姓名: {realname}
                 密碼：{password}
                 電話：{phone}
@@ -841,8 +1083,8 @@ def register(request):
                 職稱：{title}
                 公司：{company}
                 權限等級：{permission_type}
-                是否啟動：{'是' if is_active else '否'}
-                是否為管理員：{'是' if is_superuser else '否'}
+                是否啟用：{'是' if is_active else '否'}
+                是否為管理：{'是' if is_superuser else '否'}
             """
             messages.success(request, success_message)
             
@@ -867,7 +1109,7 @@ def register(request):
 def preview_employee(request):
     """查看職員列表"""
     print(f"訪問職員列表頁面")  # 调试信息
-    print(f"當前用戶權限: {request.session.get('permission_level')}")  # 调试信息
+    print(f"當前用戶限: {request.session.get('permission_level')}")  # 调试信息
     
     # 檢查是否已登入
     if not request.session.get('is_authenticated'):
@@ -956,7 +1198,7 @@ def toggle_active(request, user_id):
         
     except Exception as e:
         db.rollback()
-        print(f"切換用戶狀態誤: {e}")
+        print(f"切換用戶狀態錯誤: {e}")
         messages.error(request, '操作失敗，請稍後再試')
         
     finally:
@@ -984,7 +1226,7 @@ def delete_employee(request, user_id):
         cursor.execute("DELETE FROM users WHERE user_id = %s", [user_id])
         
         db.commit()
-        messages.success(request, '用戶已刪除')
+        messages.success(request, '用戶已刪除資料庫內容')
         
     except Exception as e:
         db.rollback()
@@ -997,92 +1239,273 @@ def delete_employee(request, user_id):
         
     return redirect('preview_employee')
 
-def make_obituary(request, obituary_id=None):
-    """製作訃聞上傳片"""
-    if request.method == 'POST':
+@require_http_methods(["GET", "POST"])
+def retrieve_obituary(request, obituary_id):
+    """取得資料庫中的訃聞資料"""
+    try:
+        print("\n" + "="*50)
+        print("開始擷取訃聞資料...")
+        print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"訃聞 ID: {obituary_id}")
+        
+        if not request.session.get('is_authenticated'):
+            print("錯誤: 使用者未登入")
+            return JsonResponse({'success': False, 'error': '請先登入'})
+            
+        db = connection_db()
+        if not db:
+            print("錯誤: 資料庫連接失敗")
+            return JsonResponse({'success': False, 'error': '資料庫連接失敗'})
+            
+        cursor = db.cursor(dictionary=True)
+        
         try:
-            # 確保目錄存在
-            obituaries_dir = os.path.join(settings.STATICFILES_DIRS[0], 'obituaries')
-            if not os.path.exists(obituaries_dir):
+            # 獲取訃聞基本資料
+            print("\n正在獲取基本資料...")
+            cursor.execute("""
+                SELECT *, COALESCE(is_public, 0) as is_public 
+                FROM obituary WHERE id = %s
+            """, [obituary_id])
+            
+            obituary_data = cursor.fetchone()
+            if not obituary_data:
+                print("錯誤: 找不到訃聞資料")
+                return JsonResponse({'success': False, 'error': '找不到訃聞資料'})
+            
+            print("\n基本資料摘要:")
+            print(f"- 往生者: {obituary_data.get('deceased_name', '未設定')}")
+            print(f"- 建立時間: {obituary_data.get('created_at', '未設定')}")
+            print(f"- 服務區域: {obituary_data.get('service_area', '未設定')}")
+            print(f"- 背景音樂: {obituary_data.get('background_music', '未設定')}")
+            print(f"- 背景樣式: {obituary_data.get('desktop_background', '未設定')}")
+            print(f"- 字體樣式: {obituary_data.get('font_style', '未設定')}")
+            print(f"- 是否公開: {'是' if obituary_data.get('is_public') else '否'}")
+
+            # 獲取各種類型的照片
+            print("\n正在獲取照片資料...")
+            photo_queries = {
+                'deceased_photo': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'personal' LIMIT 1",
+                'obituary_front': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_front' LIMIT 1",
+                'obituary_back': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_back' LIMIT 1",
+                'life_photos': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'life'",
+                'flower_gifts': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'flower_gift'"
+            }
+            
+            photos = {}
+            for key, query in photo_queries.items():
+                print(f"\n處理 {key} 照片:")
+                cursor.execute(query, [obituary_id])
+                if key in ['life_photos', 'flower_gifts']:
+                    photos[key] = []
+                    results = cursor.fetchall()
+                    print(f"- 找到 {len(results)} 張照片")
+                    for idx, photo in enumerate(results, 1):
+                        if photo.get('photo_link'):
+                            photo_data = {
+                                'id': photo['id'],
+                                'photo_link': base64.b64encode(photo['photo_link']).decode('utf-8'),
+                                'name': photo.get('name', ''),
+                                'price': photo.get('price', ''),
+                                'orderable': photo.get('orderable', False),
+                                'file_name': photo.get('file_name', '未命名檔案'),
+                                'created_at': photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')
+                            }
+                            photos[key].append(photo_data)
+                            print(f"  {idx}. ID: {photo['id']}")
+                            print(f"     檔案名稱: {photo.get('file_name', '未命名檔案')}")
+                            print(f"     建立時間: {photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')}")
+                else:
+                    photo = cursor.fetchone()
+                    if photo and photo.get('photo_link'):
+                        photos[key] = {
+                            'id': photo['id'],
+                            'data': base64.b64encode(photo['photo_link']).decode('utf-8'),
+                            'name': photo.get('file_name', '未命名檔案'),
+                            'created_at': photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        print(f"- 成功獲取照片")
+                        print(f"  ID: {photo['id']}")
+                        print(f"  檔案名稱: {photo.get('file_name', '未命名檔案')}")
+                        print(f"  建立時間: {photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')}")
+                    else:
+                        print("- 未上傳照片")
+
+            # 處理日期格式
+            print("\n處理日期格式...")
+            if obituary_data.get('birth_date'):
+                obituary_data['birth_date'] = obituary_data['birth_date'].strftime('%Y-%m-%d')
+                print(f"- 生日: {obituary_data['birth_date']}")
+            if obituary_data.get('death_date'):
+                obituary_data['death_date'] = obituary_data['death_date'].strftime('%Y-%m-%d')
+                print(f"- 死亡日期: {obituary_data['death_date']}")
+            
+            # 處理儀式流程
+            print("\n處理儀式流程...")
+            ceremony_process = []
+            if obituary_data.get('ceremony_process_list'):
                 try:
-                    os.makedirs(obituaries_dir)
-                    print(f"創建目錄: {obituaries_dir}")
-                except Exception as e:
-                    print(f"創建目錄失敗: {e}")
-                    raise Exception(f"無法創建必要的目錄: {str(e)}")
+                    ceremony_process = json.loads(obituary_data['ceremony_process_list'])
+                    print(f"- 找到 {len(ceremony_process)} 個流程項目:")
+                    for idx, process in enumerate(ceremony_process, 1):
+                        print(f"  {idx}. 時間: {process.get('time', '未設定')}")
+                        print(f"     內容: {process.get('content', '未設定')}")
+                except json.JSONDecodeError as e:
+                    print(f"錯誤: 解析儀式流程失敗 - {e}")
+                    ceremony_process = []
+            else:
+                print("- 無儀式流程資料")
             
-            # 檢查目錄寫入權限
-            if not os.access(obituaries_dir, os.W_OK):
-                raise Exception(f"沒有寫入權限: {obituaries_dir}")
-                
-            print("\n" + "="*50)
-            print("開始處理訃聞製作請求...")
-            current_time = datetime.now()
-            print(f"時間: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
-            
-            # 生成時間戳
-            import time as time_module  # 重命名避免衝突
-            timestamp = int(time_module.time())
-            
-            db = connection_db()
-            if not db:
-                raise Exception("料庫連接失敗")
-                
-            cursor = db.cursor(dictionary=True)
-            
-            try:
-                # 獲基本資料
-                service_area = request.POST.get('area_selection')
-                deceased_name = request.POST.get('deceased_name')
-                
-                print("\n基本資料:")
-                print(f"- 服務區域: {service_area}")
-                print(f"- 往生者姓名: {deceased_name}")
-                
-                # 生成 HTML 檔案名稱
-                file_name = f"obituary_{timestamp}.html"
-                
-                # 準備模板資料
-                template_data = {
-                    'deceased_name': deceased_name,
-                    'service_area': service_area,
-                    # ... 其他資料 ...
-                }
-                
-                # 生成 HTML 內容
-                html_content = render_to_string('obituary_template.html', template_data)
-                
-                # 保存 HTML 檔案
-                file_path = os.path.join(obituaries_dir, file_name)
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(html_content)
-                
-                # 更新資料庫
-                cursor.execute("""
-                    UPDATE obituary 
-                    SET file_path = %s 
-                    WHERE id = %s
-                """, [file_name, obituary_id])
-                
-                db.commit()
-                print(f"訃聞製作完成: {file_path}")
-                
-            except Exception as e:
-                db.rollback()
-                print(f"\n資料庫操作錯誤: {e}")
-                raise
-                
-            finally:
-                cursor.close()
-                db.close()
-                
-        except Exception as e:
-            print(f"\n製作失敗: {e}")
+            print("\n資料擷取完成!")
             print("="*50 + "\n")
-            messages.error(request, f'訃聞製作失敗：{str(e)}')
-            return redirect('create_obituary')
             
-    return redirect('create_obituary')
+            # 返回完整資料
+            return JsonResponse({
+                'success': True,
+                'data': {
+                    'obituary': obituary_data,
+                    'photos': photos,
+                    'ceremony_process': ceremony_process
+                }
+            }, safe=False)
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"\n錯誤: 資料擷取失敗 - {e}")
+        print("="*50 + "\n")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@require_http_methods(["GET", "POST"])
+def make_obituary(request, obituary_id):
+    """製作正式訃聞"""
+    try:
+        print("\n" + "="*50)
+        print("開始製作正式訃聞...")
+        print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"訃聞 ID: {obituary_id}")
+        
+        db = connection_db()
+        if not db:
+            return JsonResponse({'success': False, 'error': '資料庫連接失敗'})
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            # 更新點擊次數
+            cursor.execute("""
+                UPDATE obituary 
+                SET view_count = COALESCE(view_count, 0) + 1 
+                WHERE id = %s
+            """, [obituary_id])
+            
+            # 獲取訃聞資料
+            cursor.execute("""
+                SELECT * FROM obituary WHERE id = %s
+            """, [obituary_id])
+            
+            obituary_data = cursor.fetchone()
+            if not obituary_data:
+                return JsonResponse({'success': False, 'error': '找不到訃聞資料'})
+
+            # 準備渲染資料
+            preview_data = {
+                'deceased_name': obituary_data.get('deceased_name'),
+                'birth_date': obituary_data.get('birth_date').strftime('%Y-%m-%d') if obituary_data.get('birth_date') else None,
+                'death_date': obituary_data.get('death_date').strftime('%Y-%m-%d') if obituary_data.get('death_date') else None,
+                'hide_birth_date': obituary_data.get('hide_birth_date'),
+                'hide_death_date': obituary_data.get('hide_death_date'),
+                'ceremony_details': obituary_data.get('ceremony_details'),
+                'background_music': obituary_data.get('background_music'),
+                'desktop_background': obituary_data.get('desktop_background'),
+                'font_style': obituary_data.get('font_style'),
+                'area_selection': obituary_data.get('service_area'),
+                'agent_name': obituary_data.get('agent_name'),
+                'agent_phone': obituary_data.get('agent_phone'),
+                'memorial_video': extract_youtube_id(obituary_data.get('memorial_video')),
+                'flower_gift_description': obituary_data.get('flower_gift_description'),
+                'location_name': obituary_data.get('location_name'),
+                'location_address': obituary_data.get('location_address'),
+                'location_area': obituary_data.get('location_area'),
+                'traffic_info': obituary_data.get('traffic_info'),
+                'tomb_location_name': obituary_data.get('tomb_location_name'),
+                'tomb_location_address': obituary_data.get('tomb_location_address'),
+                'tomb_location_area': obituary_data.get('tomb_location_area'),
+                'tomb_traffic_info': obituary_data.get('tomb_traffic_info'),
+            }
+
+            # 獲取照片資料
+            cursor.execute("""
+                SELECT * FROM photos WHERE obituary_id = %s
+            """, [obituary_id])
+            photos = cursor.fetchall()
+
+            # 處理照片資料
+            for photo in photos:
+                if photo.get('photo_link'):
+                    photo_type = photo.get('photo_type')
+                    if photo_type == 'personal':
+                        preview_data['deceased_photo'] = f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode('utf-8')}"
+                    elif photo_type == 'obituary_front':
+                        preview_data['obituary_front'] = f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode('utf-8')}"
+                    elif photo_type == 'obituary_back':
+                        preview_data['obituary_back'] = f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode('utf-8')}"
+                    elif photo_type == 'life':
+                        if 'life_photos' not in preview_data:
+                            preview_data['life_photos'] = []
+                        preview_data['life_photos'].append(f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode('utf-8')}")
+                    elif photo_type == 'flower_gift':
+                        if 'flower_gifts' not in preview_data:
+                            preview_data['flower_gifts'] = []
+                        preview_data['flower_gifts'].append({
+                            'name': photo.get('name'),
+                            'price': photo.get('price'),
+                            'image': f"data:image/jpeg;base64,{base64.b64encode(photo['photo_link']).decode('utf-8')}",
+                            'orderable': bool(photo.get('orderable', False))
+                        })
+
+            # 處理儀式流程
+            if obituary_data.get('ceremony_process_list'):
+                try:
+                    preview_data['ceremony_items'] = json.loads(obituary_data['ceremony_process_list'])
+                except json.JSONDecodeError:
+                    preview_data['ceremony_items'] = []
+
+            # 更新訃聞狀態為非草稿
+            cursor.execute("""
+                UPDATE obituary 
+                SET is_draft = 0
+                WHERE id = %s
+            """, [obituary_id])
+            
+            db.commit()
+            
+            print(f"點擊計數更新成功！")
+            print(f"- 訃聞 ID: {obituary_id}")
+            print(f"- 新點擊次數: {obituary_data['view_count']}")
+            print(f"- 更新時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            return render(request, 'obituary_page.html', {'data': preview_data})
+            
+        except Exception as e:
+            db.rollback()
+            print(f"錯誤: 製作訃聞失敗 - {e}")
+            raise
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"\n嚴重錯誤: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 def view_obituary(request, obituary_id):
     """查看訃聞"""
@@ -1184,84 +1607,333 @@ def draft_obituaries(request):
 
 def edit_draft(request, obituary_id):
     """編輯草稿訃聞"""
-    if not request.session.get('is_authenticated'):
-        messages.error(request, '請先登入')
-        return redirect('login')
-        
     try:
+        print("\n" + "="*50)
+        print("開始載入草稿編輯資料...")
+        print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"訃聞 ID: {obituary_id}")
+        
+        if not request.session.get('is_authenticated'):
+            print("錯誤: 使用者未登入")
+            messages.error(request, '請先登入')
+            return redirect('login')
+            
         db = connection_db()
         if not db:
+            print("錯誤: 資庫連接失敗")
             raise Exception("資料庫連接失敗")
             
         cursor = db.cursor(dictionary=True)
         
-        # 獲取草稿訃聞資料
-        cursor.execute("""
-            SELECT * FROM obituary 
-            WHERE id = %s AND is_draft = 1
-        """, [obituary_id])
-        
-        draft_data = cursor.fetchone()
-        if not draft_data:
-            messages.error(request, '找不到該草稿訃聞')
-            return redirect('draft_obituaries')
+        try:
+            # 獲取草稿訃聞基本資料
+            print("\n正在獲取草稿資料...")
+            cursor.execute("""
+                SELECT * FROM obituary 
+                WHERE id = %s AND is_draft = 1
+            """, [obituary_id])
             
-        # 處理日期格式
-        if draft_data['birth_date']:
-            draft_data['birth_date'] = draft_data['birth_date'].strftime('%Y-%m-%d')
-        if draft_data['death_date']:
-            draft_data['death_date'] = draft_data['death_date'].strftime('%Y-%m-%d')
+            draft_data = cursor.fetchone()
+            if not draft_data:
+                print("錯誤: 找不到草稿訃聞")
+                messages.error(request, '找不到該草稿訃聞')
+                return redirect('draft_obituaries')
+                
+            print(f"成功獲取草稿資料:")
+            print(f"- 往生者: {draft_data['deceased_name']}")
+            print(f"- 建立時間: {draft_data['created_at']}")
             
-        # 獲取相關照片
-        photo_queries = {
-            'deceased_photo': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'personal' LIMIT 1",
-            'obituary_front': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_front' LIMIT 1",
-            'obituary_back': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_back' LIMIT 1",
-            'life_photos': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'life'",
-            'flower_gifts': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'flower_gift'"
-        }
-        
-        photos = {}
-        for key, query in photo_queries.items():
-            cursor.execute(query, [obituary_id])
-            if key in ['life_photos', 'flower_gifts']:
-                photos[key] = cursor.fetchall()
-            else:
-                photo = cursor.fetchone()
-                if photo and photo.get('photo_link'):
-                    photos[key] = {
-                        'id': photo['id'],
-                        'data': base64.b64encode(photo['photo_link']).decode('utf-8')
-                    }
-        
-        # 處理儀式流程
-        ceremony_process = []
-        if draft_data.get('ceremony_process_list'):
-            try:
-                ceremony_process = json.loads(draft_data['ceremony_process_list'])
-            except json.JSONDecodeError:
-                print(f"解析儀式流程錯誤")
-        
-        # 準備模板資料
-        context = {
-            'edit_mode': True,
-            'draft': draft_data,
-            'photos': photos,
-            'ceremony_process': ceremony_process
-        }
-        
-        print(f"載入草稿 ID: {draft_data['id']}")
-        return render(request, 'draft_maker.html', context)
-        
-    except Exception as e:
-        print(f"編輯草稿錯誤: {e}")
-        messages.error(request, '無法載入草稿')
-        return redirect('draft_obituaries')
-        
-    finally:
-        if 'cursor' in locals():
+            # 處理儀式流程
+            ceremony_process = []
+            if draft_data.get('ceremony_process_list'):
+                try:
+                    ceremony_process = json.loads(draft_data['ceremony_process_list'])
+                    print(f"\n儀式流程解析成功:")
+                    for idx, process in enumerate(ceremony_process, 1):
+                        print(f"  {idx}. 時間: {process.get('time', '')}")
+                        print(f"     內容: {process.get('content', '')}")
+                except json.JSONDecodeError as e:
+                    print(f"解析儀式流程錯誤: {e}")
+                    ceremony_process = []
+            
+            # 獲取各種類型的照片
+            photo_queries = {
+                'deceased_photo': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'personal' LIMIT 1",
+                'obituary_front': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_front' LIMIT 1",
+                'obituary_back': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'obituary_back' LIMIT 1",
+                'life_photos': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'life'",
+                'flower_gifts': "SELECT * FROM photos WHERE obituary_id = %s AND photo_type = 'flower_gift'"
+            }
+            
+            print("\n照片資料:")
+            photos = {}
+            for key, query in photo_queries.items():
+                cursor.execute(query, [obituary_id])
+                if key in ['life_photos', 'flower_gifts']:
+                    photos[key] = []
+                    results = cursor.fetchall()
+                    print(f"- {key}:")
+                    for idx, photo in enumerate(results):
+                        if photo.get('photo_link'):
+                            photo_data = {
+                                'id': photo['id'],
+                                'photo_link': base64.b64encode(photo['photo_link']).decode('utf-8'),
+                                'name': photo.get('name', ''),
+                                'price': photo.get('price', ''),
+                                'orderable': photo.get('orderable', False),
+                                'file_name': photo.get('file_name', '未命名檔案'),
+                                'created_at': photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')
+                            }
+                            photos[key].append(photo_data)
+                            print(f"  {idx}. ID: {photo['id']}")
+                            print(f"     檔案名稱: {photo.get('file_name', '未命名檔案')}")
+                            print(f"     建立時間: {photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')}")
+                else:
+                    photo = cursor.fetchone()
+                    print(f"- {key}:")
+                    if photo and photo.get('photo_link'):
+                        photos[key] = {
+                            'id': photo['id'],
+                            'data': base64.b64encode(photo['photo_link']).decode('utf-8'),
+                            'name': photo.get('file_name', '未命名檔案'),
+                            'created_at': photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                        print(f"  ID: {photo['id']}")
+                        print(f"  檔案名稱: {photo.get('file_name', '未命名檔案')}")
+                        print(f"  建立時間: {photo.get('created_at').strftime('%Y-%m-%d %H:%M:%S')}")
+                    else:
+                        print("  未上傳")
+            
+            # 準備模板資料
+            context = {
+                'edit_mode': True,
+                'obituary': {
+                    'id': draft_data['id'],
+                    'service_area': draft_data['service_area'],
+                    'deceased_name': draft_data['deceased_name'],
+                    'birth_date': draft_data['birth_date'],
+                    'death_date': draft_data['death_date'],
+                    'hide_birth_date': bool(draft_data['hide_birth_date']),
+                    'hide_death_date': bool(draft_data['hide_death_date']),
+                    'ceremony_details': draft_data['ceremony_details'] or '',
+                    'farewell_location_name': draft_data.get('location_name', ''),
+                    'farewell_location_address': draft_data.get('location_address', ''),
+                    'farewell_location_area': draft_data.get('location_area', ''),
+                    'farewell_traffic_info': draft_data.get('traffic_info', ''),
+                    'tomb_location_name': draft_data.get('tomb_location_name', ''),
+                    'tomb_location_address': draft_data.get('tomb_location_address', ''),
+                    'tomb_location_area': draft_data.get('tomb_location_area', ''),
+                    'tomb_traffic_info': draft_data.get('tomb_traffic_info', ''),
+                    'flower_gift_description': draft_data.get('flower_gift_description', ''),
+                    'agent_name': draft_data.get('agent_name', ''),
+                    'agent_phone': draft_data.get('agent_phone', ''),
+                    'memorial_video': draft_data.get('memorial_video', ''),
+                    'background_music': draft_data.get('background_music', ''),
+                    'desktop_background': draft_data.get('desktop_background', ''),
+                    'font_style': draft_data.get('font_style', ''),
+                    'is_draft': True
+                },
+                'photos': photos,
+                'ceremony_process': ceremony_process
+            }
+            
+            print("\n編輯草稿資料摘要:")
+            print(f"訃聞 ID: {context['obituary']['id']}")
+            print(f"往生者姓名: {context['obituary']['deceased_name']}")
+            print(f"服務區域: {context['obituary']['service_area']}")
+            print(f"照片數量: {len(photos)}")
+            print(f"儀式流程: {len(ceremony_process)} 項")
+            print("="*50 + "\n")
+            
+            return render(request, 'draft_maker.html', context)
+            
+        except Exception as e:
+            print(f"編輯草稿錯誤: {e}")
+            raise
+            
+        finally:
             cursor.close()
-        if 'db' in locals():
             db.close()
+            
+    except Exception as e:
+        print(f"載入草稿失敗: {e}")
+        messages.error(request, '無法載入草稿資料')
+        return redirect('draft_obituaries')
+
+def obituary_list(request):
+    """訃聞列表頁面"""
+    try:
+        db = connection_db()
+        if not db:
+            messages.error(request, '系統錯誤，請稍後再試')
+            return redirect('home')
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            # 獲取搜尋參數
+            service_area = request.GET.get('service_area', '')
+            deceased_name = request.GET.get('deceased_name', '')
+            
+            # 基本條件：非草稿的訃聞
+            conditions = ["is_draft = 0"]
+            params = []
+            
+            # 添加搜尋條件
+            if service_area:
+                conditions.append("service_area = %s")
+                params.append(service_area)
+                print(f"搜尋條件 - 服務區域: {service_area}")
+            
+            if deceased_name:
+                conditions.append("deceased_name LIKE %s")
+                params.append(f"%{deceased_name}%")
+                print(f"搜尋條件 - 往生者姓名: {deceased_name}")
+            
+            # 組合 SQL 查詢
+            sql = f"""
+                SELECT id, deceased_name, service_area, created_at, 
+                       COALESCE(view_count, 0) as view_count,
+                       is_public
+                FROM obituary 
+                WHERE {' AND '.join(conditions)}
+                ORDER BY created_at DESC
+            """
+            
+            print(f"\n執行查詢:")
+            print(f"SQL: {sql}")
+            print(f"參數: {params}")
+            
+            cursor.execute(sql, params)
+            obituaries = cursor.fetchall()
+            
+            # 處理日期格式
+            for obituary in obituaries:
+                if obituary.get('created_at'):
+                    obituary['created_at'] = obituary['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            print(f"\n搜尋結果:")
+            print(f"- 找到 {len(obituaries)} 筆訃聞")
+            
+            # 如果是 AJAX 請求，返回 JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'obituaries': obituaries
+                })
+            
+            # 否則返回完整頁面
+            context = {
+                'title': '訃聞列表',
+                'obituaries': obituaries
+            }
+            
+            return render(request, 'obituary_list.html', context)
+            
+        except Exception as e:
+            print(f"獲取訃聞列表錯誤: {e}")
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+            messages.error(request, '無法載入訃聞列表')
+            return redirect('home')
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"訃聞列表頁面錯誤: {e}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+        messages.error(request, '系統錯誤，請稍後再試')
+        return redirect('home')
+
+@require_http_methods(["GET", "POST"])
+def obituary_search(request):
+    """搜尋訃聞"""
+    try:
+        print("\n" + "="*50)
+        print("開始搜尋訃聞...")
+        print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        db = connection_db()
+        if not db:
+            return JsonResponse({'success': False, 'error': '資料庫連接失敗'})
+            
+        cursor = db.cursor(dictionary=True)
+        
+        try:
+            service_area = request.GET.get('service_area', '')
+            deceased_name = request.GET.get('deceased_name', '')
+            
+            # 基本條件：必須是公開的訃聞
+            base_conditions = ["is_public = 1", "is_draft = 0"]
+            params = []
+            
+            # 添加服務區域條件
+            if service_area:
+                base_conditions.append("service_area = %s")
+                params.append(service_area)
+                print(f"搜尋條件 - 服務區域: {service_area}")
+            
+            # 添加姓名條件
+            if deceased_name:
+                base_conditions.append("deceased_name LIKE %s")
+                params.append(f"%{deceased_name}%")
+                print(f"搜尋條件 - 往生者姓名: {deceased_name}")
+            
+            # 組合 SQL 查詢
+            sql = f"""
+                SELECT id, deceased_name, service_area, created_at, 
+                       COALESCE(view_count, 0) as view_count,
+                       is_public
+                FROM obituary 
+                WHERE {' AND '.join(base_conditions)}
+                ORDER BY created_at DESC
+            """
+            
+            print(f"\n執行查詢:")
+            print(f"SQL: {sql}")
+            print(f"參數: {params}")
+            
+            cursor.execute(sql, params)
+            obituaries = cursor.fetchall()
+            
+            # 處理日期格式
+            for obituary in obituaries:
+                if obituary.get('created_at'):
+                    obituary['created_at'] = obituary['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            print(f"\n搜尋結果:")
+            print(f"- 找到 {len(obituaries)} 筆訃聞")
+            
+            return JsonResponse({
+                'success': True,
+                'obituaries': obituaries
+            })
+            
+        except Exception as e:
+            print(f"搜尋訃聞錯誤: {e}")
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+            
+        finally:
+            cursor.close()
+            db.close()
+            
+    except Exception as e:
+        print(f"處理搜尋請求失敗: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
 
 # ... 其他視圖函數 ...

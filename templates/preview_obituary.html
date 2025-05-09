@@ -42,6 +42,7 @@
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
+            margin-top: 40px;
         }
         
         .background-image {
@@ -1394,7 +1395,7 @@
             align-items: center; /* 確保圖標水平居中 */
         }
 
-        /* 分享���標樣式 */
+        /* 分享標籤樣式 */
         .share-links a {
             width: 50px;
             height: 50px;
@@ -1485,6 +1486,33 @@
                 }
             }
         }
+
+        /* 關閉預覽欄樣式 */
+        .close-preview-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #B87070;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .close-text {
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .close-text:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
     </style>
     <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
@@ -1494,6 +1522,10 @@
          style="display: none;">
     </div>
     <div class="preview-container">
+        <!-- 在 preview-container 的最前面添加關閉預覽欄 -->
+        <div class="close-preview-bar">
+            <div class="close-text" onclick="closePreview()">此為草搞預覽 - 關閉預覽</div>
+        </div>
         {% comment %} <div class="golden-bar"></div> {% endcomment %}
         {% if data.desktop_background %}
             <img 
@@ -1530,7 +1562,7 @@
                             class="deceased-photo" 
                             src="{{ data.deceased_photo }}" 
                             alt="個人照片" 
-                            onerror="console.error('照片加���失敗'); this.style.display='none';"
+                            onerror="console.error('照片加載失敗'); this.style.display='none';"
                             onload="console.log('照片加載成功');"
                         >
                     {% endif %}
@@ -1760,7 +1792,7 @@
                                                         </button>
                                                     {% else %}
                                                         <button class="btn btn-secondary btn-sm" onclick="contactService()">
-                                                            無法訂購 請聯繫客服
+                                                            無��訂購 請聯繫客服
                                                         </button>
                                                     {% endif %}
                                                 </div>
@@ -1854,7 +1886,7 @@
                 {% endif %} {% endcomment %}
                 <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
             </div>
-            <h1 style="color: #385A52;">楊子用心 · 家屬安心</h1>
+            <h1 style="color: #385A52;">XX用心 · 家屬安心</h1>
         </div>
     </div>
 
@@ -1961,7 +1993,7 @@
     });
     </script>
     <div class="floating-buttons">
-        <!-- 分享按鈕 -->
+        {% comment %} <!-- 分享按鈕 -->
         <button class="float-btn share-btn" onclick="shareContent()">
             <i class="fas fa-share-alt"></i>
         </button>
@@ -1972,13 +2004,13 @@
             <a href="" target="_blank">
               <img src="/static/images/line-icon.svg" alt="">
             </a>
-          </div>
+          </div> {% endcomment %}
         
-        <!-- ���樂按鈕 -->
+        <!-- 音樂控制按鈕 -->
         <button class="float-btn music-btn" onclick="toggleMusic()">
             <i class="fas fa-music"></i>
             <audio id="background_music" loop>
-                <source src="{% static 'audio/' %}{{ data.background_music }}.m4a" type="audio/mpeg">
+                <source src="{% static 'audio/' %}{{ data.background_music }}" type="audio/mpeg">
             </audio>
         </button>
         
@@ -2012,40 +2044,47 @@
     });
 
     // 音樂控制
-    let isPlaying = false;
+    let isPlaying = true;
     const audio = document.getElementById('background_music');
     const musicBtn = document.querySelector('.music-btn');
 
-    // 頁面載入時自動播放音樂
+    // 修改：使用 DOMContentLoaded 事件來初始化音樂
     document.addEventListener('DOMContentLoaded', function() {
+        // 先加載音頻
         audio.load();
-        // 嘗試自動播放
+        
+        // 直接播放音樂
         audio.play()
             .then(() => {
                 isPlaying = true;
                 musicBtn.classList.add('playing');
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error('自動播放失敗:', error);
-                isPlaying = false;
-                musicBtn.classList.remove('playing');
+                // 如果自動播放失敗,添加點擊事件監聽器
+                document.addEventListener('click', function initAudio() {
+                    audio.play()
+                        .then(() => {
+                            isPlaying = true;
+                            musicBtn.classList.add('playing');
+                            document.removeEventListener('click', initAudio);
+                        });
+                }, { once: true });
             });
     });
 
     function toggleMusic() {
         if (!isPlaying) {
-            // 開始播放
             audio.play()
                 .then(() => {
                     isPlaying = true;
                     musicBtn.classList.add('playing');
                 })
-                .catch((error) => {
+                .catch(error => {
                     console.error('播放失敗:', error);
                     alert('音樂播放失敗，請稍後再試');
                 });
         } else {
-            // 暫停播放
             audio.pause();
             isPlaying = false;
             musicBtn.classList.remove('playing');
@@ -2054,7 +2093,6 @@
 
     // 監聽音樂播放結束事件
     audio.addEventListener('ended', function() {
-        // 因為設置了 loop，這個事件可能發
         isPlaying = false;
         musicBtn.classList.remove('playing');
     });
@@ -2162,11 +2200,11 @@
                 <!-- 禮儀公司資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        <img src="{% static 'images/logo.jpg' %}" alt="楊子佛教Logo">
+                        <img src="{% static 'images/logo.jpg' %}" alt="XX佛教Logo">
                         {% comment %} {% if data.area_selection == '2' %}
-                            <img src="{% static 'images/title-icon-2.png' %}" alt="楊子佛教Logo">
+                            <img src="{% static 'images/title-icon-2.png' %}" alt="XX佛教Logo">
                         {% else %}
-                            <img src="{% static 'images/logo.jpg' %}" alt="楊子佛教Logo">
+                            <img src="{% static 'images/logo.jpg' %}" alt="XX佛教Logo">
                         {% endif %} {% endcomment %}
                     </div>
                     <div class="info">
@@ -2185,12 +2223,12 @@
         </div>
     </div>
     <div class="footer-bottom-conpany-info">
-        <a>楊子佛教相關連結 >> </a>
-        <a href="https://www.leniency.com.tw/" target="_blank"> 楊子佛教官網</a> 
+        <a>XX佛教相關連結 >> </a>
+        <a href="https://www.leniency.com.tw/" target="_blank"> XX佛教官網</a> 
         <a> | </a>
-        <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> 楊子佛教粉絲團</a>
+        <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> XX佛教粉絲團</a>
         <a> | </a>
-        <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> 楊子佛教Youtube</a>
+        <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> XX佛教Youtube</a>
         <a> | </a>
         {% if data.area_selection == '1' %}
             <a href="https://maps.app.goo.gl/apuxVC9fTTyGRWQL8" target="_blank"> 留下您的Google評論</a>
@@ -2199,7 +2237,7 @@
         {% endif %}
     </div>
     <div class="copyright">
-        © {% now "Y" %} 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
+        © {% now "Y" %} XX佛教禮儀雲端訃聞系統 All Rights Reserved. 
     </div>
     <div class="shopping-cart-btn" onclick="openCart()">
         <i class="fas fa-shopping-cart"></i>
@@ -2246,6 +2284,13 @@
             console.warn('無法獲取訃聞ID');
         }
     });
+    </script>
+
+    <!-- 在 script 部分添加關閉功能 -->
+    <script>
+        function closePreview() {
+            window.close();
+        }
     </script>
 </body>
 </html>

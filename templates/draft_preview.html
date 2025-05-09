@@ -1,32 +1,41 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>khgjkhjgk - 楊子佛教禮儀雲端訃聞系統</title>
-    
+    <title>訃聞草稿預覽</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         @font-face {
             font-family: '標楷體';
-            src: url('/static/fonts/kaiti.ttf') format('truetype');
+            src: url('{% static "fonts/kaiti.ttf" %}') format('truetype');
         }
         
         @font-face {
             font-family: '華康仿宋體';
-            src: url('/static/fonts/fangsong.ttf') format('truetype');
+            src: url('{% static "fonts/fangsong.ttf" %}') format('truetype');
         }
 
         body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            
-            font-family: '華康仿宋體', 'FangSong', '仿宋-繁', sans-serif;
+            {% comment %} background-color: #1668dc; {% endcomment %}
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體', 'KaiTi', '楷體-繁'{% else %}'華康仿宋體', 'FangSong', '仿宋-繁'{% endif %}, sans-serif;
         }
         
-        
+        {% comment %} .golden-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: #D4AF37;  /* 金色 */
+            z-index: 2;
+        } {% endcomment %}
         
         .preview-container {
             width: 100%;
@@ -68,7 +77,7 @@
             font-weight: bold;
             margin-bottom: 30px;
             color: #000;
-            font-family: '華康仿宋體';
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
         }
         
         .photo-container {
@@ -117,7 +126,7 @@
             font-size: 24px;
             font-weight: bold;
             color: #000;
-            font-family: '華康仿宋體';
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
         }
         
         .ceremony-container {
@@ -128,11 +137,11 @@
             color: #000;
             font-size: 20px;
             text-align: left;
-            font-family: '華康仿宋體';
+            font-family: {% if data.font_style == 'kaiti' %}'標楷體'{% else %}'華康仿宋體'{% endif %};
         }
         
         .ceremony-process-container {
-            
+            {% comment %} background-color: rgba(255, 255, 255, 0.9); {% endcomment %}
             background-color: #fff;
             border-radius: 15px;
             padding: 30px;
@@ -374,7 +383,7 @@
             margin: 0;
         }
 
-        
+        {% comment %} 儀式流程交互顏色調整 {% endcomment %}
         .ceremony-list li {
             display: flex;
             align-items: center;
@@ -389,7 +398,9 @@
             background-color: #fff;
         }
         
-        
+        {% comment %} .ceremony-list li:hover {
+            background-color: #e2e6ea;
+        } {% endcomment %}
 
         .ceremony-list li span {
             width: 80px;
@@ -453,7 +464,7 @@
             }
         }
 
-        /* 修改訃聞照片預覽樣式 */
+        /* 修改訃聞照片預覽樣 */
         .obituary-preview {
             cursor: pointer;
             transition: transform 0.3s;
@@ -781,7 +792,7 @@
         .top-btn {
             background-color: #fff;
             color: #4a76cf;
-            
+            {% comment %} display: none; /* 初始隱藏 */ {% endcomment %}
         }
 
         .flower-gift-description {
@@ -1102,7 +1113,9 @@
             line-height: 1.5;
         }
 
-        
+        {% comment %} .time-block:nth-child(odd) {
+            background-color: #B9AD9A;
+        } {% endcomment %}
 
         /* 內容方塊樣式 */
         .content-block {
@@ -1217,6 +1230,7 @@
             z-index: 2;
             width: 100%;  /* 確保寬度 100% */
             bottom: 0;    /* 確保在底部 */
+            {% comment %} font-weight: bold; {% endcomment %}
         }
 
         .footer-bottom-conpany-info a {
@@ -1237,7 +1251,7 @@
         }
 
         .bottom-title {
-            margin: 0 0 5px;  /* 上下間距 */
+            margin: 0 0 5px;  /* 上下間��� */
             text-align: center;
             position: relative;
             z-index: 2;
@@ -1261,7 +1275,7 @@
 
         .bottom-title .line {
             width: 150px;  /* 裝飾線的寬度 */
-            height: 7px;   /* 裝飾線的高度 */
+            height: 7px;   /* 裝飾��的���度 */
             object-fit: contain;
         }
 
@@ -1325,7 +1339,7 @@
             background-color: #385A52;
             border-radius: 10%;
             display: flex;
-            flex-direction: column;  /* 改為垂直排列 */
+            flex-direction: column;  /* 改為直排列 */
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -1380,7 +1394,7 @@
             align-items: center; /* 確保圖標水平居中 */
         }
 
-        /* 分享圖標樣式 */
+        /* 分享標籤樣式 */
         .share-links a {
             width: 50px;
             height: 50px;
@@ -1418,64 +1432,362 @@
                 transform: translateY(0);
             }
         }
+
+        /* 購物車按鈕 RWD */
+        @media (max-width: 768px) {
+            .shopping-cart-btn {
+                width: 60px;  /* 縮小寬度 */
+                height: 80px; /* 縮小高度 */
+                right: 10px;  /* 調整右側間距 */
+                
+                /* 縮小圖標 */
+                i {
+                    font-size: 20px;
+                    margin-bottom: 5px;
+                }
+                
+                /* 縮小文字 */
+                span:not(.cart-count) {
+                    font-size: 12px;
+                }
+                
+                /* 縮小數量標籤 */
+                .cart-count {
+                    width: 16px;
+                    height: 16px;
+                    font-size: 10px;
+                    top: 8px;
+                    right: 8px;
+                }
+            }
+        }
+
+        /* 浮動按鈕 RWD */
+        @media (max-width: 768px) {
+            .float-btn {
+                width: 40px;      /* 縮小寬度 */
+                height: 40px;     /* 縮小高度 */
+                margin: 5px;      /* 縮小間距 */
+                
+                /* 縮小圖標 */
+                i {
+                    font-size: 16px;
+                }
+            }
+            
+            .share-links {
+                right: 45px;     /* 調整分享連結位置 */
+                
+                /* 縮小分享圖標 */
+                img {
+                    width: 30px;
+                    height: 30px;
+                }
+            }
+        }
+
+        .life-photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .life-photo-item {
+            aspect-ratio: 1;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .life-photo-item:hover {
+            transform: scale(1.05);
+        }
+
+        .life-photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ceremony-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .ceremony-item .time {
+            color: #4a76cf;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ceremony-item .content {
+            color: #333;
+        }
+
+        .ceremony-content-wrapper {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .ceremony-left-section {
+            flex: 1;
+            padding-right: 20px;
+            border-right: 1px solid #eee;
+        }
+
+        .ceremony-right-section {
+            width: 40%;
+        }
+
+        .obituary-preview-container {
+            width: 100%;
+        }
+
+        .obituary-preview {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .obituary-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .obituary-thumbnails {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .obituary-thumbnail {
+            width: 120px;
+            height: 80px;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .obituary-thumbnail.active {
+            border-color: #4a76cf;
+        }
+
+        .obituary-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .obituary-thumbnail span {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            text-align: center;
+            padding: 2px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .ceremony-content-wrapper {
+                flex-direction: column;
+            }
+            
+            .ceremony-left-section {
+                width: 100%;
+                padding-right: 0;
+                border-right: none;
+                border-bottom: 1px solid #eee;
+                margin-bottom: 20px;
+            }
+            
+            .ceremony-right-section {
+                width: 100%;
+            }
+        }
+
+        /* 關閉預覽欄樣式 */
+        .close-preview-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #B87070;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .close-text {
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .close-text:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        {% comment %} /* 調整原有容器的上邊距，為關閉預覽欄留出空間 */
+        .preview-container {
+            margin-top: 40px;
+        } {% endcomment %}
     </style>
+    <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
 <body>
+    <div id="obituary-data" 
+         data-obituary-id="{{ obituary.id }}"
+         style="display: none;">
+    </div>
     <div class="preview-container">
-        
-        
+        <!-- 關閉預覽欄 -->
+        <div class="close-preview-bar">
+            <div class="close-text" onclick="closePreview()">此為草搞預覽 - 關閉預覽</div>
+        </div>
+        {% if data.desktop_background %}
             <img 
                 class="background-image" 
-                src="/static/cloud_obituary/desktop/1.jpg" 
+                src="{% static 'cloud_obituary/desktop/' %}{{ data.desktop_background }}.jpg" 
                 alt="背景"
                 onload="this.classList.add('loaded')"
             >
-        
+        {% endif %}
         <div class="content-wrapper">
             <div class="preview-content">
                 <div class="title bottom-title">
                     <div class="container">
                         <div class="top uk-flex uk-flex-center">
-                            <img src="/static/images/title-left.svg" alt="" class="line">
-                            
-                                <img class="title-icon" src="/static/images/title-icon.png" alt="" 
+                            <img src="{% static 'images/title-left.svg' %}" alt="" class="line">
+                            <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
                                      style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                            
-                            <img src="/static/images/title-right.svg" alt="" class="line">
+                            {% comment %} {% if data.area_selection == '2' %}
+                                <img class="title-icon" src="{% static 'images/title-icon-2.png' %}" alt="" 
+                                     style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
+                            {% else %}
+                                <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
+                                     style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
+                            {% endif %} {% endcomment %}
+                            <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
                         </div>
                     </div>
                 </div>
 
-                <div class="deceased-name">khgjkhjgk</div>
+                <div class="deceased-name">{{ data.deceased_name }}</div>
                 <div class="photo-container">
-                    
+                    {% if data.deceased_photo %}
+                        <img 
+                            class="deceased-photo" 
+                            src="{{ data.deceased_photo }}" 
+                            alt="個人照片" 
+                            onerror="console.error('照片加載失敗'); this.style.display='none';"
+                            onload="console.log('照片加載成功');"
+                        >
+                    {% endif %}
                 </div>
 
                 <!-- 生卒年容器 -->
-                <div class="dates-container" style="margin-top: 20px;">
-                    
+                <div class="dates-container" style="margin-top: {% if not data.birth_date and not data.death_date %}0{% else %}20px{% endif %};">
+                    {% if not data.hide_birth_date and data.birth_date %}
                         <div class="date-item">
-                            生於 2024-12-18
+                            生於 {{ data.birth_date }}
                         </div>
+                    {% endif %}
                     
-                    
-                    
+                    {% if not data.hide_death_date and data.death_date %}
                         <div class="date-item">
-                            辭世 2024-12-18
+                            辭世 {{ data.death_date }}
                         </div>
-                    
+                    {% endif %}
                 </div>
                 <div class="ceremony-divider"></div>
 
                 <!-- 告別式說明容器 -->
-                
+                {% if data.ceremony_details %}
                     <div class="ceremony-container">
-                        <p>hjkghk</p>
+                        {{ data.ceremony_details|linebreaks }}
                     </div>
-                
+                {% endif %}
 
                 <!-- 儀式流程容器 -->
-                
+                {% if data.ceremony_process %}
+                <div class="ceremony-process-container">
+                    <div class="ceremony-process-content">
+                        <div class="head">
+                            <h2>告別式流程</h2>
+                            <div class="ceremony-divider"></div>
+                        </div>
+                        
+                        <div class="ceremony-content-wrapper">
+                            <!-- 左側儀式流程 -->
+                            <div class="ceremony-left-section">
+                                <div class="ceremony-list">
+                                    {% for item in data.ceremony_process %}
+                                    <div class="ceremony-item">
+                                        <div class="time-block">{{ item.time }}</div>
+                                        <div class="content-block">{{ item.content }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <!-- 右側訃聞預覽 -->
+                            <div class="ceremony-right-section">
+                                {% if data.obituary_front or data.obituary_back %}
+                                <div class="obituary-preview-container">
+                                    <div class="obituary-preview">
+                                        <!-- 預設顯示正面 -->
+                                        <img src="{{ data.obituary_front }}" alt="訃聞預覽" onclick="showFullscreen(this.src)">
+                                    </div>
+                                    <div class="obituary-thumbnails">
+                                        {% if data.obituary_front %}
+                                        <div class="obituary-thumbnail active" onclick="switchPreview(this, '{{ data.obituary_front }}')">
+                                            <img src="{{ data.obituary_front }}" alt="訃聞正面">
+                                            {% comment %} <span>正面</span> {% endcomment %}
+                                        </div>
+                                        {% endif %}
+                                        {% if data.obituary_back %}
+                                        <div class="obituary-thumbnail" onclick="switchPreview(this, '{{ data.obituary_back }}')">
+                                            <img src="{{ data.obituary_back }}" alt="訃聞背面">
+                                            {% comment %} <span>背面</span> {% endcomment %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- 位置資訊容器 -->
                 <div class="ceremony-process-container location-container">
@@ -1496,22 +1808,22 @@
                                     <ul class="info-list">
                                         <li>
                                             <span>會場名稱：</span>
-                                            <p>hgkhg</p>
+                                            <p>{{ data.location_name }}</p>
                                         </li>
                                         <li>
                                             <span>會場地址：</span>
-                                            <p>jkjgh</p>
+                                            <p>{{ data.location_address }}</p>
                                         </li>
-                                        
+                                        {% if data.location_area %}
                                         <li>
                                             <span>廳別資訊：</span>
-                                            <p>k</p>
+                                            <p>{{ data.location_area }}</p>
                                         </li>
                                         <li>
                                             <span>交通資訊：</span>
                                         </li>
-                                        
-                                        
+                                        {% endif %}
+                                        {% if data.traffic_info %}
                                         <li>
                                             <div class="traffic-info-container">
                                                 <div class="traffic-header" onclick="toggleTraffic(this)">
@@ -1519,30 +1831,52 @@
                                                 </div>
                                                 <div class="traffic-content collapsed">
                                                     <div class="traffic-sections">
-                                                        <p>hgjkghk</p>
+                                                        {{ data.traffic_info|linebreaks }}
                                                     </div>
                                                 </div>
                                             </div>
                                         </li>
-                                        
+                                        {% endif %}
                                     </ul>
                                 </div>
                                 
                                 <!-- 添加靈堂資訊 -->
                                 <div class="loca-info" id="tomb-info" style="display: none;">
-                                    
-                                    
+                                    {% comment %} <p class="venue-name">{{ data.tomb_location_name }}</p> {% endcomment %}
+                                    {% comment %} <div class="ceremony-divider"></div> {% endcomment %}
                                     <ul class="info-list">
                                         <li>
                                             <span>靈堂名稱：</span>
-                                            <p></p>
+                                            <p>{{ data.tomb_location_name }}</p>
                                         </li>
                                         <li>
                                             <span>靈堂地址：</span>
-                                            <p></p>
+                                            <p>{{ data.tomb_location_address }}</p>
                                         </li>
-                                        
-                                        
+                                        {% if data.tomb_location_area %}
+                                        <li>
+                                            <span>靈堂廳別：</span>
+                                            <p>{{ data.tomb_location_area }}</p>
+                                        </li>
+                                        <li>
+                                            <span>交通訊：</span>
+                                        </li>
+                                        {% endif %}
+                                        {% if data.tomb_traffic_info %}
+                                        <li>
+                                            {% comment %} <span>交通資訊：</span> {% endcomment %}
+                                            <div class="traffic-info-container">
+                                                <div class="traffic-header" onclick="toggleTraffic(this)">
+                                                    <div class="toggle-icon">詳細資訊</div>
+                                                </div>
+                                                <div class="traffic-content collapsed">
+                                                    <div class="traffic-sections">
+                                                        {{ data.tomb_traffic_info|linebreaks }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        {% endif %}
                                     </ul>
                                 </div>
                             </div>
@@ -1565,29 +1899,62 @@
                         </div>
 
                         <!-- 花禮說明 -->
-                        
+                        {% if data.flower_gift_description %}
                         <div class="flower-gift-description">
-                            <p>ghjkhgjk</p>
+                            {{ data.flower_gift_description|linebreaks }}
                         </div>
-                        
+                        {% endif %}
 
                         <!-- 花禮列表 -->
                         <div class="flower-gift-list">
                             <!-- 添加調試信息 -->
                             <div style="display: none;">
                                 Debug info:
-                                Total gifts: 0
-                                
+                                Total gifts: {{ data.flower_gifts|length }}
+                                {% for gift in data.flower_gifts %}
+                                    Gift {{ forloop.counter }}:
+                                    Name: {{ gift.name }}
+                                    Price: {{ gift.price }}
+                                    Has image: {% if gift.image %}Yes{% else %}No{% endif %}
+                                {% endfor %}
                             </div>
                             
                             <div class="row">
-                                
+                                {% for gift in data.flower_gifts %}
+                                    <div class="col-md-3 mb-4">
+                                        <div class="flower-gift-item">
+                                            {% if gift.image %}
+                                            <img src="{{ gift.image }}" alt="花禮圖片" class="gift-image" onclick="showFullscreen('{{ gift.image }}')"
+                                                 onerror="console.error('花禮圖片載入失敗:', this.src);">
+                                            {% endif %}
+                                            <div class="gift-info">
+                                                <h5>{{ gift.name|default:'無名稱' }}</h5>
+                                                <p>NT$ {{ gift.price|default:'無價格' }}</p>
+                                                <div class="order-button">
+                                                    {% if gift.orderable %}
+                                                        <button class="btn btn-primary btn-sm" 
+                                                                onclick="addToCart('{{ gift.name }}', '{{ gift.price }}', '{{ gift.image }}')">
+                                                            加入購物車
+                                                        </button>
+                                                    {% else %}
+                                                        <button class="btn btn-secondary btn-sm" onclick="contactService()">
+                                                            無法訂購 請聯繫客服
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if forloop.counter|divisibleby:4 and not forloop.last %}
+                                        </div><div class="row">
+                                    {% endif %}
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 生活照卡片 -->
+                <!-- 生活點滴卡片 -->
                 <div class="ceremony-process-container">
                     <div class="ceremony-process-content">
                         <div class="head">
@@ -1596,17 +1963,54 @@
                         </div>
 
                         <div class="photos-section">
-                            
+                            {% if data.life_photos %}
+                                <div class="life-photos-preview">
+                                    <div class="current-photo" onclick="showFullscreen(this.querySelector('img').src)">
+                                        <img src="{{ data.life_photos.0.image }}" alt="生活照預覽">
+                                    </div>
+                                    
+                                    <div class="life-photos-thumbnails">
+                                        {% for photo in data.life_photos %}
+                                            <div class="life-photo-thumbnail {% if forloop.first %}active{% endif %}" 
+                                                 onclick="switchLifePhoto(this, '{{ photo.image }}')">
+                                                <img src="{{ photo.image }}" alt="生活照">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
                                 <div class="no-photos-message">
                                     尚未上傳生活照
                                 </div>
-                            
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
                 <!-- 回憶錄卡片 -->
-                
+                {% if data.memorial_video %}
+                <div class="ceremony-process-container">
+                    <div class="ceremony-process-content">
+                        <div class="head">
+                            <h2>{{ data.deceased_name }}回憶錄</h2>
+                            <div class="ceremony-divider"></div>
+                        </div>
+
+                        <div class="video-section">
+                            <div class="video-container">
+                                <iframe 
+                                    width="560" 
+                                    height="315" 
+                                    src="https://www.youtube.com/embed/{{ data.memorial_video }}" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -1615,14 +2019,20 @@
     <div class="title bottom-title">
         <div class="container">
             <div class="top uk-flex uk-flex-center">
-                <img src="/static/images/title-left.svg" alt="" class="line">
-                
-                    <img class="title-icon" src="/static/images/title-icon.png" alt="" 
+                <img src="{% static 'images/title-left.svg' %}" alt="" class="line">
+                <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
+                style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
+
+                {% comment %} {% if data.area_selection == '1' %}
+                    <img class="title-icon" src="{% static 'images/title-icon-2.png' %}" alt="" 
                          style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
-                
-                <img src="/static/images/title-right.svg" alt="" class="line">
+                {% else %}
+                    <img class="title-icon" src="{% static 'images/title-icon.png' %}" alt="" 
+                         style="filter: brightness(0) saturate(100%) invert(32%) sepia(15%) saturate(1032%) hue-rotate(118deg) brightness(95%) contrast(91%);">
+                {% endif %} {% endcomment %}
+                <img src="{% static 'images/title-right.svg' %}" alt="" class="line">
             </div>
-            <h1 style="color: #385A52;">楊子用心 · 家屬安心</h1>
+            <h1 style="color: #385A52;">XX用心 · 家屬安心</h1>
         </div>
     </div>
 
@@ -1635,7 +2045,7 @@
         });
         thumbnail.classList.add('active');
         
-        // 新預圖
+        // 更新預覽圖
         const previewImg = document.querySelector('.obituary-preview img');
         previewImg.src = imageSrc;
     }
@@ -1729,7 +2139,7 @@
     });
     </script>
     <div class="floating-buttons">
-        <!-- 分享按鈕 -->
+        {% comment %} <!-- 分享按鈕 -->
         <button class="float-btn share-btn" onclick="shareContent()">
             <i class="fas fa-share-alt"></i>
         </button>
@@ -1740,13 +2150,13 @@
             <a href="" target="_blank">
               <img src="/static/images/line-icon.svg" alt="">
             </a>
-          </div>
+          </div> {% endcomment %}
         
-        <!-- 音樂按鈕 -->
+        <!-- 音樂控制按鈕 -->
         <button class="float-btn music-btn" onclick="toggleMusic()">
             <i class="fas fa-music"></i>
             <audio id="background_music" loop>
-                <source src="/static/audio/1.m4a" type="audio/mpeg">
+                <source src="{% static 'audio/' %}{{ data.background_music }}" type="audio/mpeg">
             </audio>
         </button>
         
@@ -1786,17 +2196,26 @@
 
     // 頁面載入時自動播放音樂
     document.addEventListener('DOMContentLoaded', function() {
+        // 先加載音頻
         audio.load();
-        // 嘗試自動播放
+        
+        // 直接播放音樂
         audio.play()
             .then(() => {
                 isPlaying = true;
                 musicBtn.classList.add('playing');
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error('自動播放失敗:', error);
-                isPlaying = false;
-                musicBtn.classList.remove('playing');
+                // 如果自動播放失敗,添加點擊事件監聽器
+                document.addEventListener('click', function initAudio() {
+                    audio.play()
+                        .then(() => {
+                            isPlaying = true;
+                            musicBtn.classList.add('playing');
+                            document.removeEventListener('click', initAudio);
+                        });
+                }, { once: true });
             });
     });
 
@@ -1876,7 +2295,7 @@
             return;
         }
         // 跳轉到購物車頁面
-        window.location.href = "/buy_car/";
+        window.location.href = "{% url 'buy_car' %}";
     }
     
     // 添加到購物車
@@ -1914,28 +2333,36 @@
                 <!-- 承辦人員資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        
-                            <img src="/static/images/agent_logo.jpg" alt="承辦人員所屬公司">
-                        
+                        <img src="{% static 'images/agent_logo.jpg' %}" alt="承辦人員所屬公司">
+                        {% comment %} {% if data.area_selection == '2' %} {% endcomment %}
+                            {% comment %} <img src="{% static 'images/title-icon-2.png' %}" alt="承辦人員所屬公司">
+                        {% else %}
+                            <img src="{% static 'images/agent_logo.jpg' %}" alt="承辦人員所屬公司">
+                        {% endif %} {% endcomment %}
                     </div>
                     <div class="info">
                         <h3><a>禮儀師資訊</a></h3>
-                        <p><span>禮儀師：</span>ghjhjgk</p>
-                        <p><span>聯絡電話：</span><a href="tel:0916800633">0916800633</a></p>
+                        <p><span>禮儀師：</span>{{ data.agent_name }}</p>
+                        <p><span>聯絡電話：</span><a href="tel:{{ data.agent_phone }}">{{ data.agent_phone }}</a></p>
                     </div>
                 </div>
                 <!-- 禮儀公司資訊 -->
                 <div class="item uk-flex uk-flex-middle">
                     <div class="logo" data-title="">
-                        
-                            <img src="/static/images/logo.jpg" alt="楊子佛教Logo">
-                        
+                        <img src="{% static 'images/logo.jpg' %}" alt="XX佛教Logo">
+                        {% comment %} {% if data.area_selection == '2' %}
+                            <img src="{% static 'images/title-icon-2.png' %}" alt="XX佛教Logo">
+                        {% else %}
+                            <img src="{% static 'images/logo.jpg' %}" alt="XX佛教Logo">
+                        {% endif %} {% endcomment %}
                     </div>
                     <div class="info">
                         <h3><a href="https://www.leniency.com.tw/" target="_blank">
-                            
+                            {% if data.area_selection == '2' %}
+                                {% comment %} 楊子北區服務處
+                            {% else %} {% endcomment %}
                                 楊子佛教禮儀(股)公司
-                            
+                            {% endif %}
                         </a></h3>
                         <p><span>全台24H客服：</span>0800-365-108</p>
                         <p><span>訂  花  專  線</span><a href="tel:0965-606-100">0965-606-100</a></p>
@@ -1945,28 +2372,152 @@
         </div>
     </div>
     <div class="footer-bottom-conpany-info">
-        <a>楊子佛教相關連結 >> </a>
-        <a href="https://www.leniency.com.tw/" target="_blank"> 楊子佛教官網</a> 
+        <a>XX佛教相關連結 >> </a>
+        <a href="https://www.leniency.com.tw/" target="_blank"> XX佛教官網</a> 
         <a> | </a>
-        <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> 楊子佛教粉絲團</a>
+        <a href="https://www.facebook.com/yangzi.fans/?locale=zh_TW/" target="_blank"> XX佛教粉絲團</a>
         <a> | </a>
-        <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> 楊子佛教Youtube</a>
+        <a href="https://www.youtube.com/@Yangzi-Co" target="_blank"> XX佛教Youtube</a>
         <a> | </a>
-        
+        {% if data.area_selection == '1' %}
+            <a href="https://maps.app.goo.gl/apuxVC9fTTyGRWQL8" target="_blank"> 留下您的Google評論</a>
+        {% else %}
             <a href="https://maps.app.goo.gl/cQEdZ9SVdXe9d4zm7" target="_blank"> 留下您的Google評論</a>
-        
+        {% endif %}
     </div>
     <div class="copyright">
-        © 2024 楊子佛教禮儀雲端訃聞系統 All Rights Reserved. 
+        © {% now "Y" %} XX佛教禮儀雲端訃聞系統 All Rights Reserved. 
     </div>
     <div class="shopping-cart-btn" onclick="openCart()">
         <i class="fas fa-shopping-cart"></i>
         <span class="cart-count" id="cartCount">0</span>
-        <span>花禮購物車</span>
+        <span>花禮物車</span>
     </div>
     <div class="fullscreen-preview" onclick="hideFullscreen()">
         <span class="close-preview">&times;</span>
         <img src="" alt="預覽圖片">
     </div>
+
+    <!-- 在頁面載入時添加點擊計數 -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const obituaryId = document.getElementById('obituary-data').getAttribute('data-obituary-id');
+        
+        if (obituaryId) {
+            console.log('準備發送計數請求，訃聞ID:', obituaryId);
+            
+            fetch(`/obituary/count/${obituaryId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response status:', response.status);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('訪數更新成功:', data.new_count);
+                } else {
+                    console.error('計數更新失敗:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('計數請求錯誤:', error.message);
+            });
+        } else {
+            console.warn('無法獲取訃聞ID');
+        }
+    });
+    </script>
+
+    <!-- 添加訊息接收處理 -->
+    <script>
+    // 監聽來自 draft_maker.html 的訊息
+    window.addEventListener('message', function(event) {
+        // 確保訊息來源安全
+        if (event.origin !== window.location.origin) return;
+        
+        const { type, data } = event.data;
+        
+        switch(type) {
+            case 'updateBackground':
+                // 更新背景樣式
+                document.body.style.backgroundImage = `url({% static 'images/bg_' %}${data}.jpg)`;
+                break;
+                
+            case 'updateFont':
+                // 更新字體樣式
+                document.body.style.fontFamily = data === 'kaiti' ? 
+                    "'標楷體', 'KaiTi', '楷體-繁'" : 
+                    "'華康仿宋體', 'FangSong', '仿宋-繁'";
+                break;
+                
+            case 'updateMusic':
+                // 更新背景音樂
+                const audioPlayer = document.getElementById('background_audio');
+                if (audioPlayer) {
+                    audioPlayer.src = data ? `{% static '' %}${data}` : '';
+                    if (data) {
+                        audioPlayer.load();
+                    }
+                }
+                break;
+                
+            case 'updatePersonalPhoto':
+                // 更新個人照片
+                const personalPhoto = document.querySelector('.deceased-photo');
+                if (personalPhoto && data) {
+                    personalPhoto.src = data;
+                }
+                break;
+                
+            case 'updateCeremonyDetails':
+                // 更新告別式說明
+                const ceremonyDetails = document.querySelector('.ceremony-details');
+                if (ceremonyDetails) {
+                    ceremonyDetails.textContent = data;
+                }
+                break;
+        }
+    });
+    </script>
+
+    <!-- 修改相關的 HTML 元素，添加 id 以便更新 -->
+    <div class="preview-container">
+        <!-- 背景圖片 -->
+        <img class="background-image" 
+             src="{% static 'images/bg_' %}{{ data.desktop_background }}.jpg" 
+             alt="背景圖片">
+        
+        <!-- 音樂播放器 -->
+        <audio id="background_audio" loop>
+            <source src="{% static data.background_music %}" type="audio/mp4">
+        </audio>
+        
+        <!-- 個人照片 -->
+        <div class="photo-container">
+            <img class="deceased-photo" 
+                 src="{% if data.deceased_photo %}{{ data.deceased_photo }}{% endif %}" 
+                 alt="往生者照片">
+        </div>
+        
+        <!-- 告別式說明 -->
+        <div class="ceremony-container">
+            <div class="ceremony-details">
+                {{ data.ceremony_details|linebreaks }}
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function closePreview() {
+        window.close();
+    }
+    </script>
 </body>
 </html>

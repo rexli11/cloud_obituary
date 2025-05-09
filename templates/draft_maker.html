@@ -1,126 +1,1612 @@
-{% extends 'base.html' %}
 {% load static %}
-
-{% block content %}
-<div class="container">
-    <div class="title-container">
-        <h2>編輯草稿訃聞</h2>
-        <div class="button-group">
-            <a href="{% url 'draft_obituaries' %}" class="nav-btn">返回草稿列表</a>
-            <a href="{% url 'home' %}" class="nav-btn">回首頁</a>
-        </div>
-    </div>
-
-    <div class="form-container">
-        <form method="POST" action="{% url 'update_obituary' %}" enctype="multipart/form-data" id="obituaryForm">
-            {% csrf_token %}
-            <input type="hidden" name="is_draft" value="true">
-            <input type="hidden" name="obituary_id" value="{{ draft.id }}">
-
-            <!-- 基本資料 -->
-            <div class="form-group">
-                <label for="area_selection" class="form-label">服務區域</label>
-                <select class="form-control" id="area_selection" name="area_selection">
-                    <option value="1" {% if draft.service_area == '1' %}selected{% endif %}>北部服務處</option>
-                    <option value="2" {% if draft.service_area == '2' %}selected{% endif %}>中部服務處</option>
-                    <option value="3" {% if draft.service_area == '3' %}selected{% endif %}>南部服務處</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="deceased_name" class="form-label">往生者姓名</label>
-                <input type="text" 
-                       class="form-control" 
-                       id="deceased_name" 
-                       name="deceased_name" 
-                       value="{{ draft.deceased_name }}"
-                       placeholder="請輸入往生者姓名">
-            </div>
-
-            <!-- ... 其他表單欄位，從 obituary_maker.html 複製過來並加上 value="{{ draft.xxx }}" ... -->
-
-            <div class="text-center mt-4">
-                <button type="button" class="btn btn-info btn-submit me-2" style="width: 200px;" onclick="previewObituary()">預覽</button>
-                <button type="button" class="btn btn-primary btn-submit" style="width: 200px;" onclick="submitForm()">儲存修改</button>
-                <button type="button" class="btn btn-secondary btn-submit" style="width: 200px;" onclick="window.location.href='{% url 'draft_obituaries' %}'">取消</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Progress Modal -->
-<div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="progressModalLabel">儲存中...</h5>
-            </div>
-            <div class="modal-body">
-                <div class="progress mb-3">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
-                </div>
-                <p id="progressStatus" class="text-center mb-0">準備儲存...</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 填充表單數據
-    const draft = {
-        service_area: '{{ draft.service_area }}',
-        deceased_name: '{{ draft.deceased_name }}',
-        birth_date: '{{ draft.birth_date|date:"Y-m-d" }}',
-        death_date: '{{ draft.death_date|date:"Y-m-d" }}',
-        // ... 其他數據
-    };
-
-    // 填充表單
-    Object.keys(draft).forEach(key => {
-        const element = document.getElementById(key);
-        if (element) {
-            element.value = draft[key];
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訃聞草稿修改 - XX佛教禮儀雲端訃聞系統</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #385A52;
+            padding: 20px;
+            background-repeat: no-repeat;
+            background-position: center top;
+            background-size: contain;
         }
-    });
-});
+        
+        .title-container {
+            background-color: #385A52;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-label {
+            font-size: 1.6em;
+        }
 
-function submitForm() {
-    const form = document.getElementById('obituaryForm');
-    if (form.checkValidity()) {
-        const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
-        progressModal.show();
+        .form-control {
+            font-size: 1.2em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
         
-        const formData = new FormData(form);
-        formData.append('is_draft', 'true');
+        .btn-submit {
+            width: 200px;
+            height: 50px;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .preview-box {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .preview-box h6 {
+            margin-bottom: 10px;
+            color: #4a76cf;
+        }
+
+        .preview-box img {
+            width: 100% !important;
+            height: 300px !important;
+            object-fit: cover;
+            object-position: top;
+            border-radius: 5px;
+        }
+
+        .desktop-preview img {
+            width: 100% !important;
+            height: 500px !important;
+            object-fit: cover;
+        }
+
+        .btn-primary {
+            background-color: #4a76cf;
+            border-color: #4a76cf;
+            height: 35px;
+            font-size: 1.5em;
+        }
         
-        fetch('{% url "update_obituary" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('progressStatus').textContent = '儲存成功！';
-                document.getElementById('progressBar').style.width = '100%';
-                setTimeout(() => {
-                    window.location.href = '{% url "draft_obituaries" %}';
-                }, 1000);
-            } else {
-                throw new Error(data.error || '儲存失敗');
-            }
-        })
-        .catch(error => {
-            document.getElementById('progressStatus').textContent = '儲存失敗：' + error.message;
-            document.getElementById('progressStatus').style.color = 'red';
-            document.getElementById('progressBar').classList.add('bg-danger');
+        .btn-primary:hover {
+            background-color: #3a66bf;
+            border-color: #3a66bf;
+        }
+
+        .btn-info {
+            background-color: #385A52;
+            border-color: #4a76cf;
+        }
+        
+        .btn-info:hover {
+            background-color: #B9AD9A;
+            border-color: #3a66bf;
+            color: white;
+        }
+
+        hr.my-4 {
+            height: 5px;
+            background-color: red;
+            border: none;
+            color: red;
+        }
+
+        .nav-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .nav-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            background-color: #385A52;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background-color: #2A4840;
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+        }
+
+        .progress {
+            height: 25px;
+            border-radius: 12px;
+        }
+
+        .progress-bar {
+            background-color: #385A52;
+        }
+
+        .modal-header {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .modal-footer {
+            border-top: none;
+            justify-content: center;
+        }
+
+        #progressStatus {
+            font-size: 1.1em;
+            color: #385A52;
+        }
+
+        .modal-footer .btn-primary {
+            background-color: #385A52;
+            border-color: #385A52;
+            padding: 10px 30px;
+            font-size: 1.1em;
+        }
+
+        .modal-footer .btn-primary:hover {
+            background-color: #2A4840;
+            border-color: #2A4840;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航按钮 -->
+    <div class="nav-buttons">
+        <a href="{% url 'obituary_base' %}" class="nav-btn">回上一頁</a>
+        <a href="{% url 'home' %}" class="nav-btn">回首頁</a>
+        <a href="{% url 'logout' %}" class="nav-btn">登出</a>
+    </div>
+
+    <div class="container">
+        <div class="title-container">
+            <h2>案件名稱：{{ obituary.deceased_name }} 訃聞草稿修改</h2>
+        </div>
+
+        <div class="form-container">
+            <form method="POST" action="{% url 'update_obituary' %}" enctype="multipart/form-data" id="obituaryForm">
+                {% csrf_token %}
+
+                <h3 class="area_selection">地區選擇</h3>
+                <div class="area_selection_list">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">請選擇服務處</label>
+                            <select class="form-select" name="area_selection" id="area_selection">
+                                <option value="1">北部服務處</option>
+                                <option value="2">中部服務處</option>
+                                <option value="3">南部服務處</option>
+                            </select>
+                            <div class="form-text text-muted">
+                                地區服務處不顯示於訃聞中，用於統計之用
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">是否公開訃聞</label>
+                            <select class="form-select" name="is_public" id="is_public">
+                                <option value="1">是</option>
+                                <option value="0">否</option>
+                            </select>
+                            <div class="form-text text-muted">
+                                公開訃聞將顯示於客戶端訃聞列表中
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br>
+
+                <hr class="my-4">
+
+                <h3 class="mb-4">版面設定</h3>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">背景音樂</label>
+                        <select class="form-select" 
+                                name="background_music" 
+                                id="background_music">
+                            <option value="">請選擇背景音樂</option>
+                            <option value="audio/1.m4a" 
+                                    {% if obituary.background_music == 'audio/1.m4a' %}selected{% endif %}>
+                                法鼓山-我為你祝福
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">背景樣式</label>
+                        <select class="form-select mb-2" name="desktop_background" id="desktop_background" onchange="previewBackground('desktop')">
+                            <option value="">請選擇桌電背景 (1280×3500)</option>
+                            {% for i in "123" %}
+                            <option value="{{ i }}" {% if obituary.desktop_background == i %}selected{% endif %}>桌電背景 {{ i }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">字體樣式</label>
+                        <select class="form-select" name="font_style" id="font_style" onchange="previewFont()">
+                            <option value="">請選擇字體</option>
+                            <option value="fangsong" {% if obituary.font_style == 'fangsong' %}selected{% endif %}>華康仿宋體</option>
+                            <option value="kaiti" {% if obituary.font_style == 'kaiti' %}selected{% endif %}>標楷體</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="preview-section mb-4">
+                    <h5 class="mb-3">背景預覽區</h5>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="preview-box desktop-preview">
+                                <h5>桌電背景預覽區</h5>
+                                <img id="preview_desktop" 
+                                     src="{% if obituary.desktop_background %}{% static 'cloud_obituary/desktop/' %}{{ obituary.desktop_background }}.jpg{% endif %}" 
+                                     alt="桌電背景預覽區" 
+                                     style="{% if obituary.desktop_background %}display: block{% else %}display: none{% endif %};">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label for="deceased_name" class="form-label">往生者全名 - 必填項目</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="deceased_name" 
+                           name="deceased_name" 
+                           placeholder="如 某某某居士、某某某老太夫人"
+                           onchange="saveDeceasedName(this.value)"
+                           oninput="saveDeceasedName(this.value)"
+                           value="{{ obituary.deceased_name }}"
+                           >
+                </div>
+
+                <div class="form-group">
+                    <label for="deceased_photo" class="form-label">個人照片</label>
+                    <div class="input-group">
+                        <input type="file" 
+                               class="form-control" 
+                               id="deceased_photo" 
+                               name="deceased_photo" 
+                               accept="image/*" 
+                               onchange="previewImage(this);">
+                        {% if photos.deceased_photo %}
+                        <input type="hidden" 
+                               id="current_deceased_photo" 
+                               name="current_deceased_photo" 
+                               value="{{ photos.deceased_photo.data }}"
+                               data-filename="{{ photos.deceased_photo.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="form-text text-muted">
+                        上傳直式相片，建議尺寸比例為 3:4
+                        <br>
+                        支援的格式：JPG、PNG
+                    </div>
+                    <div id="imagePreview" class="mt-2" style="display: {% if photos.deceased_photo %}block{% else %}none{% endif %};">
+                        <img id="preview" 
+                             src="{% if photos.deceased_photo %}data:image/jpeg;base64,{{ photos.deceased_photo.data }}{% endif %}" 
+                             alt="照片預覽" 
+                             style="max-height: 200px; max-width: 150px; object-fit: contain;">
+                        <div class="mt-2">
+                            <span class="text-muted" id="fileName">
+                                目前照片: {% if photos.deceased_photo %}{{ photos.deceased_photo.name }}{% endif %}
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger d-block mt-2" onclick="clearImage();">移除照片</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="birth_date" class="form-label">生年月日</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="hide_birth_date" 
+                                           name="hide_birth_date"
+                                           {% if obituary.hide_birth_date %}checked{% endif %}>
+                                    <label class="form-check-label" for="hide_birth_date">
+                                        不顯示
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="birth_date" 
+                                   name="birth_date"
+                                   value="{{ obituary.birth_date|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="death_date" class="form-label">辭世月日</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="hide_death_date" 
+                                           name="hide_death_date"
+                                           {% if obituary.hide_death_date %}checked{% endif %}>
+                                    <label class="form-check-label" for="hide_death_date">
+                                        不顯示
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="death_date" 
+                                   name="death_date"
+                                   value="{{ obituary.death_date|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ceremony_details" class="form-label">告別式說明</label>
+                    <textarea class="form-control" 
+                              id="ceremony_details" 
+                              name="ceremony_details" 
+                              rows="4" 
+                              placeholder="請輸入告別式說明">{{ obituary.ceremony_details }}</textarea>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label class="form-label">儀式程</label>
+                    <div id="ceremony-items">
+                        {% if ceremony_process %}
+                            {% for item in ceremony_process %}
+                                <div class="ceremony-item mb-3">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <input type="time" 
+                                                   class="form-control" 
+                                                   name="ceremony_time[]" 
+                                                   value="{{ item.time }}"
+                                                   onchange="updateCeremonyPreview()">
+                                        </div>
+                                        <div class="col-md-7">
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   name="ceremony_content[]" 
+                                                   value="{{ item.content }}"
+                                                   onchange="updateCeremonyPreview()">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" 
+                                                    class="btn btn-danger"
+                                                    onclick="removeCeremonyItem(this)">×</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <button type="button" 
+                            class="btn btn-primary w-100" 
+                            onclick="addCeremonyItem()">新增儀式流程</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">訃聞照片</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>正面</label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   name="obituary_front" 
+                                   accept="image/*"
+                                   onchange="previewObituaryImage(this, 'front')">
+                        </div>
+                        <div class="col-md-6">
+                            <label>背面</label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   name="obituary_back" 
+                                   accept="image/*"
+                                   onchange="previewObituaryImage(this, 'back')">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label class="form-label">位置資訊</label>
+                    <div class="mb-3">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" id="farewell_hall" onclick="switchLocationForm('farewell')">告別式會場</button>
+                            <button type="button" class="btn btn-outline-primary" id="tomb" onclick="switchLocationForm('tomb')">靈堂</button>
+                        </div>
+                    </div>
+
+                    <!-- 告別式會場表單 -->
+                    <div id="farewell_form">
+                        <div class="mb-3">
+                            <label for="farewell_location_name" class="form-label">告別式會場名稱</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="farewell_location_name" 
+                                   name="farewell_location_name" 
+                                   placeholder="請輸入告別式會場名稱"
+                                   {% comment %} value = "{% if obituary.farewell_location_name %}, ''{% endif %}"> {% endcomment %}
+                                   value="{% if obituary.farewell_location_name %}{{ obituary.farewell_location_name }}{% else %}{% endif %}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="farewell_location_address" class="form-label">會場地址</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="farewell_location_address" 
+                                   name="farewell_location_address" 
+                                   placeholder="請輸入會場地址"
+                                   onchange="saveFarewellAddress(this.value)"
+                                   oninput="saveFarewellAddress(this.value)"
+                                   value="{% if obituary.farewell_location_address %}{{ obituary.farewell_location_address }}{% else %}{% endif %}">
+                                   {% comment %} value="{{ obituary.farewell_location_address }}"> {% endcomment %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="farewell_location_area" class="form-label">所屬廳別</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="farewell_location_area" 
+                                   name="farewell_location_area" 
+                                   placeholder="請輸入所屬廳別"
+                                   value="{% if obituary.farewell_location_area %}{{ obituary.farewell_location_area }}{% else %}{% endif %}">
+                                   {% comment %} value = "{% if obituary.farewell_location_area %}, ''{% endif %}"> {% endcomment %}
+                                   {% comment %} value="{{ obituary.farewell_location_area }}"> {% endcomment %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="farewell_traffic_info" class="form-label">交通資訊</label>
+                            <textarea 
+                                class="form-control" 
+                                id="farewell_traffic_info" 
+                                name="farewell_traffic_info" 
+                                rows="4" 
+                                placeholder="請輸入細部交通資訊"
+                                >{% if obituary.farewell_traffic_info %}{{ obituary.farewell_traffic_info }}{% else %}{% endif %}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- 靈堂表單 -->
+                    <div id="tomb_form" style="display: none;">
+                        <div class="mb-3">
+                            <label for="tomb_location_name" class="form-label">靈堂名稱</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="tomb_location_name" 
+                                   name="tomb_location_name" 
+                                   placeholder="請輸入靈堂稱"
+                                   value="{% if obituary.tomb_location_name %}{{ obituary.tomb_location_name }}{% else %}{% endif %}">
+                                   {% comment %} value = "{% if obituary.tomb_location_name %}, ''{% endif %}"> {% endcomment %}
+                                   {% comment %} value="{{ obituary.tomb_location_name }}"> {% endcomment %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tomb_location_address" class="form-label">靈堂地址</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="tomb_location_address" 
+                                   name="tomb_location_address" 
+                                   placeholder="請輸入靈堂地址"
+                                   value="{% if obituary.tomb_location_address %}{{ obituary.tomb_location_address }}{% else %}{% endif %}">
+                                   {% comment %} value = "{% if obituary.tomb_location_address %}, ''{% endif %}"> {% endcomment %}
+                                   {% comment %} value="{{ obituary.tomb_location_address }}"> {% endcomment %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tomb_location_area" class="form-label">所屬廳別</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="tomb_location_area" 
+                                   name="tomb_location_area" 
+                                   placeholder="請輸入所屬廳別"
+                                   value="{% if obituary.tomb_location_area %}{{ obituary.tomb_location_area }}{% else %}{% endif %}">
+                                   {% comment %} value="{{ obituary.tomb_location_area }}"> {% endcomment %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tomb_traffic_info" class="form-label">交通資訊</label>
+                            <textarea class="form-control" 
+                                      id="tomb_traffic_info" 
+                                      name="tomb_traffic_info" 
+                                      rows="4" 
+                                      placeholder="請輸入細部通資訊">{% if obituary.tomb_traffic_info %}{{ obituary.tomb_traffic_info }}{% else %}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label class="form-label">告別式致贈花禮</label>
+                    <textarea class="form-control mb-3" 
+                              id="flower_gift_description" 
+                              name="flower_gift_description" 
+                              rows="3" 
+                              placeholder="請輸入致贈花禮的說明">{{ obituary.flower_gift_description }}</textarea>
+
+                    <div class="row" id="flower_gift_list">
+                        {% if photos.flower_gifts %}
+                            {% for gift in photos.flower_gifts %}
+                                <div class="col-md-3 mb-3">
+                                    <div class="card h-100">
+                                        <div class="img-preview-container" style="height: 200px; overflow: hidden;">
+                                            <img src="data:image/jpeg;base64,{{ gift.photo_link }}"
+                                                 class="card-img-top"
+                                                 style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div class="card-body">
+                                            <input type="file" 
+                                                   class="form-control mb-2" 
+                                                   name="flower_gift_list[{{ forloop.counter0 }}][image]" 
+                                                   accept="image/*" 
+                                                   onchange="previewFlowerGift(this)">
+                                            <input type="hidden" 
+                                                   name="flower_gift_list[{{ forloop.counter0 }}][original_image]" 
+                                                   value="{{ gift.photo_link }}"
+                                                   data-filename="{{ gift.file_name }}">
+                                            <input type="text" 
+                                                   class="form-control mb-2" 
+                                                   name="flower_gift_list[{{ forloop.counter0 }}][name]" 
+                                                   value="{{ gift.name }}" 
+                                                   placeholder="花禮名稱">
+                                            <input type="text" 
+                                                   class="form-control mb-2" 
+                                                   name="flower_gift_list[{{ forloop.counter0 }}][price]" 
+                                                   value="{{ gift.price }}" 
+                                                   placeholder="花禮價格">
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="flower_gift_list[{{ forloop.counter0 }}][orderable]" 
+                                                       {% if gift.orderable %}checked{% endif %}>
+                                                <label class="form-check-label">可訂購</label>
+                                            </div>
+                                        </div>
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm position-absolute"
+                                                style="right: 5px; top: 5px; z-index: 10;"
+                                                onclick="this.closest('.col-md-3').remove()">×</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 mt-3" onclick="addFlowerGift()">新增花禮</button>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label class="form-label">回憶錄</label>
+                    <input type="url" 
+                           class="form-control" 
+                           id="memorial_video" 
+                           name="memorial_video" 
+                           {% comment %} value="{{ obituary.memorial_video }}" {% endcomment %}
+                           value="{% if obituary.memorial_video %}{{ obituary.memorial_video }}{% else %}{% endif %}">
+                           placeholder="請輸入 YouTube 網址">
+                    <div class="form-text text-muted">
+                        請輸入有效的 YouTube 網址（例如：https://www.youtube.com/watch?v=xxxx 或 https://youtu.be/xxxx）
+                    </div>
+                    <div id="video-preview" class="mt-3" style="display: {% if obituary.memorial_video %}block{% else %}none{% endif %};">
+                        {% comment %} <h5>影片預覽</h5>
+                        <div class="ratio ratio-16x9">
+                            <iframe id="youtube-preview" 
+                                    src="{% if obituary.memorial_video %}https://www.youtube.com/embed/{{ obituary.memorial_video }}{% endif %}" 
+                                    title="YouTube video player" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                            </iframe>
+                        </div> {% endcomment %}
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label class="form-label">生活照</label>
+                    <div class="row" id="life_photos_list">
+                        {% if photos.life_photos %}
+                            {% for photo in photos.life_photos %}
+                                <div class="col-md-3 mb-4">
+                                    <div class="card">
+                                        <div class="img-preview-container" style="height: 200px; overflow: hidden;">
+                                            <img src="data:image/jpeg;base64,{{ photo.photo_link }}"
+                                                 class="card-img-top"
+                                                 style="width: 100%; height: 100%; object-fit: cover;">
+                                        </div>
+                                        <div class="card-body">
+                                            <input type="file" 
+                                                   class="form-control mb-2" 
+                                                   name="life_photos[{{ forloop.counter0 }}]" 
+                                                   accept="image/*" 
+                                                   onchange="previewLifePhoto(this)">
+                                            <input type="hidden" 
+                                                   name="life_photos_original[{{ forloop.counter0 }}]" 
+                                                   value="{{ photo.photo_link }}"
+                                                   data-filename="{{ photo.file_name }}">
+                                        </div>
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm position-absolute"
+                                                style="right: 5px; top: 5px; z-index: 10;"
+                                                onclick="this.closest('.col-md-3').remove()">×</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 mt-3" onclick="addLifePhoto()">新增生活照</button>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="form-group">
+                    <label class="form-label">承辦人員</label>
+                    <div class="mb-3">
+                        <label for="agent_name" class="form-label">姓名</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="agent_name" 
+                               name="agent_name" 
+                               placeholder="承辦人員姓名"
+                               value="{% if obituary.agent_name %}{{ obituary.agent_name }}{% else %}{% endif %}">
+                               {% comment %} value="{{ obituary.agent_name }}"> {% endcomment %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="agent_phone" class="form-label">電畫</label>
+                        <input type="tel" 
+                               class="form-control" 
+                               id="agent_phone" 
+                               name="agent_phone" 
+                               placeholder="承辦人員電話"
+                               value="{% if obituary.agent_phone %}{{ obituary.agent_phone }}{% else %}{% endif %}">
+                               {% comment %} value="{{ obituary.agent_phone }}"> {% endcomment %}
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="button" 
+                            class="btn btn-info btn-submit me-2" 
+                            style="width: 200px;" 
+                            onclick="previewDraft()">草稿預覽</button>
+                    <button type="button" class="btn btn-primary btn-submit" style="width: 200px; height: 50px;" onclick="submitForm()">
+                        確認製作訃聞
+                    </button>
+                    <button type="button" class="btn btn-info btn-submit me-2" style="width: 200px;" onclick="revseDraft()">草稿修改儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('input[name="music_option"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const fileInput = document.querySelector('input[type="file"]');
+                fileInput.disabled = !document.getElementById('use_custom').checked;
+            });
         });
-    } else {
-        form.reportValidity();
-    }
-}
-</script>
-{% endblock %} 
+        
+        function previewImage(input) {
+            const preview = document.getElementById('preview');
+            const previewDiv = document.getElementById('imagePreview');
+            const fileNameSpan = document.getElementById('fileName');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    previewDiv.style.display = 'block';
+                    fileNameSpan.textContent = '目前照片: ' + input.files[0].name;
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            } else if (input.dataset.originalFile) {
+                preview.src = preview.src;
+                previewDiv.style.display = 'block';
+                fileNameSpan.textContent = '目前照片: ' + input.dataset.originalFile;
+            }
+        }
+        
+        function previewObituaryImage(input, type) {
+            const previewId = type === 'front' ? 'frontPreview' : 'backPreview';
+            const previewDivId = type === 'front' ? 'frontImagePreview' : 'backImagePreview';
+            
+            const preview = document.getElementById(previewId);
+            const previewDiv = document.getElementById(previewDivId);
+            const fileNameSpan = previewDiv.querySelector('.text-muted');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    previewDiv.style.display = 'block';
+                    if (fileNameSpan) {
+                        fileNameSpan.textContent = '目前照片: ' + input.files[0].name;
+                    }
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearImage() {
+            const input = document.getElementById('deceased_photo');
+            const preview = document.getElementById('preview');
+            const previewDiv = document.getElementById('imagePreview');
+            const fileNameSpan = document.getElementById('fileName');
+            
+            input.value = '';
+            input.dataset.originalFile = '';
+            preview.src = '';
+            previewDiv.style.display = 'none';
+            fileNameSpan.textContent = '目前照片: 無檔案名稱';
+        }
+
+        document.getElementById('hide_birth_date').addEventListener('change', function() {
+            const birthDate = document.getElementById('birth_date');
+            birthDate.disabled = this.checked;
+            if (this.checked) {
+                birthDate.removeAttribute('required');
+            } else {
+                birthDate.setAttribute('required', '');
+            }
+        });
+
+        document.getElementById('hide_death_date').addEventListener('change', function() {
+            const deathDate = document.getElementById('death_date');
+            deathDate.disabled = this.checked;
+            if (this.checked) {
+                deathDate.removeAttribute('required');
+            } else {
+                deathDate.setAttribute('required', '');
+            }
+        });
+
+        // 半形轉全形標點符號對照表
+        const punctuationMap = {
+            ',': '，',
+            '.': '。',
+            '!': '！',
+            '?': '？',
+            ':': '：',
+            ';': '；',
+            '(': '（',
+            ')': '）',
+            '[': '［',
+            ']': ']',
+            '{': '｛',
+            '}': '｝',
+            '<': '＜',
+            '>': '＞',
+            '/': '／',
+            '\\': '���',
+            '|': '｜',
+            '"': '「',
+            "'": '『',
+            ' ': '　'
+        };
+
+        // 轉換函數
+        function toFullWidth(text) {
+            return text.replace(/[,\.!?:;\(\)\[\]{}<>\/\\|"' ]/g, char => punctuationMap[char] || char);
+        }
+
+        // 為所有文字輸入添加自動轉換
+        document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+            input.addEventListener('blur', function() {
+                this.value = toFullWidth(this.value);
+            });
+        });
+
+        // 改為完整的addCeremonyProcess函數定義
+        function addCeremonyProcess() {
+            // 獲取容器
+            const container = document.getElementById('ceremony_process_list');
+            if (!container) {
+                console.error('找不到儀式流程容器');
+                return;
+            }
+
+            // 創建儀式項目容器
+            const processItem = document.createElement('div');
+            processItem.className = 'ceremony-item mb-2 p-3 bg-light rounded';
+            
+            // 創建時間和內容的容器
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'd-flex align-items-center gap-2';
+            
+            // 創建時間輸入
+            const timeInput = document.createElement('input');
+            timeInput.type = 'time';
+            timeInput.className = 'form-control';
+            timeInput.style.width = '120px';
+            timeInput.name = 'ceremony_time[]';
+            
+            // 創建內容輸入
+            const contentInput = document.createElement('input');
+            contentInput.type = 'text';
+            contentInput.className = 'form-control';
+            contentInput.name = 'ceremony_content[]';
+            contentInput.placeholder = '請輸入儀式內容';
+            
+            // 添加全形轉換功能
+            contentInput.addEventListener('blur', function() {
+                this.value = toFullWidth(this.value);
+            });
+            
+            // 創建刪除按鈕
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-link text-danger p-0 ms-2';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.style.fontSize = '24px';
+            deleteBtn.style.textDecoration = 'none';
+            deleteBtn.onclick = function() {
+                container.removeChild(processItem);
+            };
+            
+            // 組合元素
+            contentWrapper.appendChild(timeInput);
+            contentWrapper.appendChild(contentInput);
+            contentWrapper.appendChild(deleteBtn);
+            processItem.appendChild(contentWrapper);
+            
+            // 添加到容器
+            container.appendChild(processItem);
+            
+            // 添加調試輸出
+            console.log('新增儀式流程項目');
+        }
+
+        // 位置資訊按鈕換
+        document.getElementById('farewell_hall').addEventListener('click', function() {
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            document.getElementById('tomb').classList.remove('btn-primary');
+            document.getElementById('tomb').classList.add('btn-outline-primary');
+            document.getElementById('location_area_container').style.display = 'block';
+        });
+
+        document.getElementById('tomb').addEventListener('click', function() {
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            document.getElementById('farewell_hall').classList.remove('btn-primary');
+            document.getElementById('farewell_hall').classList.add('btn-outline-primary');
+            document.getElementById('location_area_container').style.display = 'none';
+            document.getElementById('location_area').value = '';
+        });
+
+        // 初始化地圖
+        let map;
+        let marker;
+        let geocoder;
+        let infoWindow;
+
+        // 初始化地圖（設定在台灣中心點）
+        function initMap() {
+            const taiwan = { lat: 23.5, lng: 121.5 };
+            
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: taiwan,
+                zoom: 7
+            });
+
+            geocoder = new google.maps.Geocoder();
+            infoWindow = new google.maps.InfoWindow();
+
+            // 添加自動完成功能
+            const input = document.getElementById('location_address');
+            const autocomplete = new google.maps.places.Autocomplete(input);
+            
+            // 當選擇址時更新圖
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (!place.geometry) {
+                    return;
+                }
+
+                updateMap(place.geometry.location, place.formatted_address);
+            });
+
+            // 允許地圖上點擊來設置置
+            map.addListener('click', function(e) {
+                geocoder.geocode({
+                    location: e.latLng
+                }, function(results, status) {
+                    if (status === 'OK') {
+                        if (results[0]) {
+                            document.getElementById('location_address').value = results[0].formatted_address;
+                            updateMap(e.latLng, results[0].formatted_address);
+                        }
+                    }
+                });
+            });
+        }
+
+        // 搜尋位置
+        function searchLocation() {
+            const address = document.getElementById('location_address').value;
+            
+            geocoder.geocode({
+                address: address
+            }, function(results, status) {
+                if (status === 'OK') {
+                    updateMap(results[0].geometry.location, results[0].formatted_address);
+                } else {
+                    alert('找不到該地址，重新輸入');
+                }
+            });
+        }
+
+        // 更地圖標記和資訊
+        function updateMap(location, address) {
+            map.setCenter(location);
+            map.setZoom(16);
+
+            // 更新或創建標記
+            if (marker) {
+                marker.setMap(null);
+            }
+            
+            marker = new google.maps.Marker({
+                map: map,
+                position: location,
+                animation: google.maps.Animation.DROP
+            });
+
+            // 新資訊視窗
+            infoWindow.setContent(address);
+            infoWindow.open(map, marker);
+
+            // 更新隱藏的經緯度輸入
+            document.getElementById('latitude').value = location.lat();
+            document.getElementById('longitude').value = location.lng();
+        }
+
+        // 頁載入時初始化地圖
+        window.addEventListener('load', initMap);
+
+        // 字體預覽功能
+        function previewFont() {
+            const fontSelect = document.getElementById('font_style');
+            const previewText = document.getElementById('preview_text');
+            
+            switch(fontSelect.value) {
+                case 'kaiti':
+                    previewText.style.fontFamily = '標楷體, KaiTi, 楷體-繁';
+                    break;
+                case 'fangsong':
+                    previewText.style.fontFamily = '華康仿宋體, FangSong, 仿宋-繁';
+                    break;
+                default:
+                    previewText.style.fontFamily = 'inherit';
+            }
+        }
+
+        // 背景預覽功能
+        function previewBackground(type) {
+            const desktopSelect = document.getElementById('desktop_background');
+            const previewDesktop = document.getElementById('preview_desktop');
+            
+            if (type === 'desktop' && desktopSelect.value) {
+                const desktopPath = `/static/cloud_obituary/desktop/${desktopSelect.value}.jpg`;
+                previewDesktop.src = desktopPath;
+                previewDesktop.style.display = 'block';
+            } else {
+                previewDesktop.style.display = 'none';
+            }
+        }
+
+        // 頁面載入時初始化背景預覽
+        document.addEventListener('DOMContentLoaded', function() {
+            const desktopSelect = document.getElementById('desktop_background');
+            if (desktopSelect.value) {
+                previewBackground('desktop');
+            }
+        });
+
+        // 移除原有的背景置相關代碼
+        function handleResize() {
+            // 移除此函數的內容
+        }
+
+        // 移除視窗大小變化監聽
+        // window.removeEventListener('resize', handleResize);
+
+        // 移除 body 背景樣設置
+        document.body.style.backgroundColor = '#f8f9fa';  // 復原始背景色
+
+        // 如果是編輯模式，添加儀式項目的輔助函數
+        function addCeremonyItem(time, content) {
+            const container = document.getElementById('ceremony-items');
+            
+            // 建儀式項目容器
+            const processItem = document.createElement('div');
+            processItem.className = 'ceremony-item mb-3';
+            processItem.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="time" class="form-control" name="ceremony_time[]" onchange="updateCeremonyPreview()">
+                    </div>
+                    <div class="col-md-7">
+                        <input type="text" class="form-control" name="ceremony_content[]" onchange="updateCeremonyPreview()">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger" onclick="removeCeremonyItem(this)">×</button>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(processItem);
+        }
+
+        function removeCeremonyItem(button) {
+            button.closest('.ceremony-item').remove();
+            updateCeremonyPreview();
+        }
+
+        function updateCeremonyPreview() {
+            const items = document.querySelectorAll('.ceremony-item');
+            const ceremonyData = [];
+            
+            items.forEach(item => {
+                const time = item.querySelector('input[type="time"]').value;
+                const content = item.querySelector('input[type="text"]').value;
+                if (time && content) {
+                    ceremonyData.push({ time, content });
+                }
+            });
+            
+            // 發送到預覽頁面更新
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'updateCeremony',
+                    data: ceremonyData
+                }, '*');
+            }
+        }
+
+        function previewObituaryImage(input, type) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // 發送到預覽頁面更新
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({
+                            type: 'updateObituary',
+                            imageType: type,
+                            data: e.target.result
+                        }, '*');
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function addFlowerGift() {
+            const container = document.getElementById('flower_gift_list');
+            const index = container.children.length;
+            
+            const giftDiv = document.createElement('div');
+            giftDiv.className = 'col-md-3 mb-3';
+            giftDiv.innerHTML = `
+                <div class="card h-100">
+                    <div class="img-preview-container" style="height: 200px; overflow: hidden;">
+                        <img src="#" class="card-img-top" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="card-body">
+                        <input type="file" 
+                               class="form-control mb-2" 
+                               name="flower_gift_list[${index}][image]" 
+                               accept="image/*" 
+                               onchange="previewFlowerGift(this)">
+                        <input type="hidden" 
+                               name="flower_gift_list[${index}][original_image]" 
+                               value="{{ gift.photo_link }}"
+                               data-filename="{{ gift.file_name }}">
+                        <input type="text" 
+                               class="form-control mb-2" 
+                               name="flower_gift_list[${index}][name]" 
+                               value="{{ gift.name }}" 
+                               placeholder="花禮名稱">
+                        <input type="text" 
+                               class="form-control mb-2" 
+                               name="flower_gift_list[${index}][price]" 
+                               value="{{ gift.price }}" 
+                               placeholder="花禮價格">
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   name="flower_gift_list[${index}][orderable]" 
+                                   {% if gift.orderable %}checked{% endif %}>
+                            <label class="form-check-label">可訂購</label>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="btn btn-danger btn-sm position-absolute"
+                            style="right: 5px; top: 5px; z-index: 10;"
+                            onclick="this.closest('.col-md-3').remove()">×</button>
+                </div>
+            `;
+            
+            container.appendChild(giftDiv);
+        }
+
+        function previewLifePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                const img = input.closest('.card').querySelector('img');
+                
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function previewFlowerGift(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                const card = input.closest('.card');
+                const img = card.querySelector('img');
+                
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 置資訊按鈕切換
+        document.getElementById('send_farewell').addEventListener('click', function() {
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            document.getElementById('send_tomb').classList.remove('btn-primary');
+            document.getElementById('send_tomb').classList.add('btn-outline-primary');
+        });
+
+        document.getElementById('send_tomb').addEventListener('click', function() {
+            this.classList.add('btn-primary');
+            this.classList.remove('btn-outline-primary');
+            document.getElementById('send_farewell').classList.remove('btn-primary');
+            document.getElementById('send_farewell').classList.add('btn-outline-primary');
+        });
+
+        function addLifePhoto() {
+            const container = document.getElementById('life_photos_list');
+            const index = container.children.length;
+            
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'col-md-3 mb-4';
+            photoDiv.innerHTML = `
+                <div class="card">
+                    <div class="img-preview-container" style="height: 200px; overflow: hidden;">
+                        <img src="#" class="card-img-top" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="card-body">
+                        <input type="file" 
+                               class="form-control mb-2" 
+                               name="life_photos[${index}]" 
+                               accept="image/*" 
+                               onchange="previewLifePhoto(this)">
+                    </div>
+                    <button type="button" 
+                            class="btn btn-danger btn-sm position-absolute"
+                            style="right: 5px; top: 5px; z-index: 10;"
+                            onclick="this.closest('.col-md-3').remove()">×</button>
+                </div>
+            `;
+            
+            container.appendChild(photoDiv);
+        }
+
+        function previewObituary() {
+            const form = document.getElementById('obituaryForm');
+            const formData = new FormData(form);
+            
+            const submitForm = document.createElement('form');
+            submitForm.method = 'POST';
+            submitForm.action = '/preview_obituary/';
+            submitForm.enctype = 'multipart/form-data';
+            submitForm.target = '_blank';
+            
+            // 添加 CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            submitForm.appendChild(csrfInput);
+            
+            // 將 FormData 中的數據轉換為表單元素
+            for (let [key, value] of formData.entries()) {
+                if (value instanceof File) {
+                    // 檢查文件是否為空
+                    if (value.size > 0) {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.name = key;
+                        
+                        // 創建一個新的 FileList 對象
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(value);
+                        input.files = dataTransfer.files;
+                        
+                        submitForm.appendChild(input);
+                        console.log(`添加文件: ${key}, size: ${value.size}`);
+                    }
+                } else {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    submitForm.appendChild(input);
+                }
+            }
+            
+            // 調試息
+            console.log('提交的表單據:');
+            const finalFormData = new FormData(submitForm);
+            for (let [key, value] of finalFormData.entries()) {
+                if (value instanceof File) {
+                    console.log(`${key}: File (${value.size} bytes)`);
+                } else {
+                    console.log(`${key}: ${value}`);
+                }
+            }
+            
+            document.body.appendChild(submitForm);
+            submitForm.submit();
+            document.body.removeChild(submitForm);
+        }
+
+        // 加切換表單的 JavaScript
+        function switchLocationForm(type) {
+            // 切換按鈕樣式
+            if (type === 'farewell') {
+                document.getElementById('farewell_hall').classList.add('btn-primary');
+                document.getElementById('farewell_hall').classList.remove('btn-outline-primary');
+                document.getElementById('tomb').classList.remove('btn-primary');
+                document.getElementById('tomb').classList.add('btn-outline-primary');
+            } else {
+                document.getElementById('tomb').classList.add('btn-primary');
+                document.getElementById('tomb').classList.remove('btn-outline-primary');
+                document.getElementById('farewell_hall').classList.remove('btn-primary');
+                document.getElementById('farewell_hall').classList.add('btn-outline-primary');
+            }
+
+            // 切換表單顯示
+            document.getElementById('farewell_form').style.display = type === 'farewell' ? 'block' : 'none';
+            document.getElementById('tomb_form').style.display = type === 'tomb' ? 'block' : 'none';
+        }
+
+        // 在表單提交前添加調試
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // e.preventDefault(); // 測試時可以取消註釋來防止表單提交
+            console.log('表單提交數據:');
+            const formData = new FormData(this);
+            for (let pair of formData.entries()) {
+                console.log(pair[0], pair[1]);
+            }
+        });
+
+        // 保存告別式會場地址到 localStorage
+        function saveFarewellAddress(address) {
+            console.log('Saving address:', address);  // 添加調試信息
+            localStorage.setItem('farewell_location_address', address);
+        }
+
+        // 保存往生者姓名到 localStorage
+        function saveDeceasedName(name) {
+            console.log('Saving name:', name);  // 添加調試信息
+            localStorage.setItem('deceased_name', name);
+        }
+
+        function saveDraft() {
+            const form = document.getElementById('obituaryForm');
+            const formData = new FormData(form);
+            formData.append('is_draft', 'true');
+            
+            // 顯示進度視窗
+            const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+            const modalTitle = document.getElementById('progressModalLabel');
+            const progressStatus = document.getElementById('progressStatus');
+            
+            modalTitle.textContent = '草稿儲存中';
+            progressStatus.textContent = '準備儲存草稿...';
+            progressModal.show();
+            
+            // 發送請求到 update_obituary
+            fetch('{% url "update_obituary" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{% url "draft_obituaries" %}';
+                } else {
+                    throw new Error(data.error || '儲存失敗');
+                }
+            })
+            .catch(error => {
+                progressStatus.textContent = '儲存失敗：' + error.message;
+                progressStatus.style.color = 'red';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 如果是編輯模式，填充表單數據
+            {% if edit_mode %}
+                // 基本資料
+                document.getElementById('area_selection').value = '{{ obituary.service_area }}';
+                document.getElementById('deceased_name').value = '{{ obituary.deceased_name }}';
+                document.getElementById('birth_date').value = '{{ obituary.birth_date|date:"Y-m-d" }}';
+                document.getElementById('death_date').value = '{{ obituary.death_date|date:"Y-m-d" }}';
+                document.getElementById('hide_birth_date').checked = {{ obituary.hide_birth_date|yesno:"true,false" }};
+                document.getElementById('hide_death_date').checked = {{ obituary.hide_death_date|yesno:"true,false" }};
+                document.getElementById('ceremony_details').value = '{{ obituary.ceremony_details }}';
+                
+                // 告別式地
+                document.getElementById('farewell_location_name').value = '{{ obituary.farewell_location_name }}';
+                document.getElementById('farewell_location_address').value = '{{ obituary.farewell_location_address }}';
+                document.getElementById('farewell_location_area').value = '{{ obituary.farewell_location_area }}';
+                document.getElementById('farewell_traffic_info').value = '{{ obituary.farewell_traffic_info }}';
+                
+                // 靈堂資料
+                document.getElementById('tomb_location_name').value = '{{ obituary.tomb_location_name }}';
+                document.getElementById('tomb_location_address').value = '{{ obituary.tomb_location_address }}';
+                document.getElementById('tomb_location_area').value = '{{ obituary.tomb_location_area }}';
+                document.getElementById('tomb_traffic_info').value = '{{ obituary.tomb_traffic_info }}';
+                
+                // 花禮描述
+                document.getElementById('flower_gift_description').value = '{{ obituary.flower_gift_description }}';
+                
+                // 承辦人資料
+                document.getElementById('agent_name').value = '{{ obituary.agent_name }}';
+                document.getElementById('agent_phone').value = '{{ obituary.agent_phone }}';
+                
+                // YouTube 連結
+                document.getElementById('memorial_video').value = '{{ obituary.memorial_video }}';
+                
+                // 儀式流程
+                {% if ceremony_process %}
+                    {% for item in ceremony_process %}
+                        addCeremonyItem('{{ item.time }}', '{{ item.content }}');
+                    {% endfor %}
+                {% endif %}
+                
+                // 花資料
+                {% if photos.flower_gifts %}
+                    {% for photo in photos.flower_gifts %}
+                        addFlowerGift('{{ photo.name }}', '{{ photo.price }}', {{ photo.orderable|yesno:"true,false" }});
+                    {% endfor %}
+                {% endif %}
+            {% endif %}
+        });
+
+        // 修改表單提交驗證
+        function submitForm() {
+            const form = document.getElementById('obituaryForm');
+            const formData = new FormData(form);
+            
+            // 除必驗證
+            form.noValidate = true;
+            
+            // 發送請求...
+        }
+
+        // 頁面載入時自動處理照片
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('deceased_photo');
+            const currentPhoto = document.querySelector('input[name="current_deceased_photo"]');
+            
+            if (currentPhoto) {
+                // 創建 File 物件
+                const filename = currentPhoto.getAttribute('data-filename');
+                const base64Data = currentPhoto.value;
+                
+                // 將 base64 轉換為 Blob
+                const byteString = atob(base64Data);
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                const blob = new Blob([ab], { type: 'image/jpeg' });
+                
+                // 創建 File 物件
+                const file = new File([blob], filename, { type: 'image/jpeg' });
+                
+                // 創建 FileList 物件
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+                
+                // 更新預覽
+                previewImage(input);
+            }
+        });
+
+        function previewDraft() {
+            const obituaryId = '{{ obituary.id }}';
+            const form = document.getElementById('obituaryForm');
+            const formData = new FormData(form);
+            
+            // 發送預覽請求
+            fetch(`/obituary/draft/preview/${obituaryId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // 在新視窗中打開預覽頁面
+                    window.open(`/obituary/draft/preview/${obituaryId}/`, '_blank');
+                } else {
+                    throw new Error('預覽失敗');
+                }
+            })
+            .catch(error => {
+                console.error('預覽錯誤:', error);
+                alert('預覽失敗，請稍後試');
+            });
+        }
+
+        document.getElementById('background_music').addEventListener('change', function() {
+            const audioPlayer = document.getElementById('preview_audio');
+            if (!audioPlayer) {
+                const audio = document.createElement('audio');
+                audio.id = 'preview_audio';
+                audio.style.display = 'none';
+                document.body.appendChild(audio);
+            }
+            
+            const selectedMusic = this.value;
+            if (selectedMusic) {
+                const audioPath = "{% static '' %}" + selectedMusic;
+                const audio = document.getElementById('preview_audio');
+                audio.src = audioPath;
+                audio.load();
+            }
+        });
+
+        // 頁面載入時初始化音樂選
+        document.addEventListener('DOMContentLoaded', function() {
+            const backgroundMusic = '{{ obituary.background_music }}';
+            if (backgroundMusic) {
+                const musicSelect = document.getElementById('background_music');
+                const options = musicSelect.options;
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value === backgroundMusic) {
+                        options[i].selected = true;
+                        break;
+                    }
+                }
+            }
+        });
+
+        // 背景樣式變更時
+        document.getElementById('desktop_background').addEventListener('change', function() {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'updateBackground',
+                    data: this.value
+                }, window.location.origin);
+            }
+        });
+
+        // 字體樣式變更時
+        document.getElementById('font_style').addEventListener('change', function() {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'updateFont',
+                    data: this.value
+                }, window.location.origin);
+            }
+        });
+
+        // 背景音樂變更時
+        document.getElementById('background_music').addEventListener('change', function() {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'updateMusic',
+                    data: this.value
+                }, window.location.origin);
+            }
+        });
+
+        // 個人照片變更時
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({
+                            type: 'updatePersonalPhoto',
+                            data: e.target.result
+                        }, window.location.origin);
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 告別式說明變更時
+        document.getElementById('ceremony_details').addEventListener('input', function() {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type: 'updateCeremonyDetails',
+                    data: this.value
+                }, window.location.origin);
+            }
+        });
+    </script>
+    <!-- 在 body 標籤結束前添加彈出視窗結構 -->
+    <div class="modal fade" id="progressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="progressModalLabel">訃聞製作中</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
+                    </div>
+                    <p id="progressStatus" class="text-center mb-0">準備開始製作...</p>
+                </div>
+                <div class="modal-footer" style="display: none;" id="modalFooter">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "obituary_base" %}'">確認完成</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

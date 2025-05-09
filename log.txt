@@ -1,0 +1,6 @@
+[2024-06-13] 新增 .gitignore 檔案，內容包含：
+- 排除 Python 編譯檔、快取(__pycache__、*.pyc)、虛擬環境(venv/)、Django 資料庫(db.sqlite3)、靜態檔案(staticfiles/)、敏感資料(key/)、範例圖片(photo_sample/)、環境設定(.env)、IDE 設定(.vscode/ .idea/)、系統檔案(.DS_Store/Thumbs.db)等。
+- 依據 structure.txt 及專案目錄結構設計，確保不會將不必要或敏感檔案納入版本控制。
+
+[2024-06-13] 更新 .gitignore 檔案，增加排除 db 相關檔案：
+- 排除 *.db、*.sqlite、*.sqlite3、*.db-journal 等資料庫檔案，確保資料庫檔案不會被納入版本控制，以符合公開作品需求。 

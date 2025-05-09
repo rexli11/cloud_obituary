@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtualenv
+venv/
+ENV/
+.env
+
+# Django
+*.log
+db.sqlite3
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+staticfiles/
+media/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Key & sensitive
+key/
+
+# Sample & temp
+photo_sample/
+
+# System
+Thumbs.db 
